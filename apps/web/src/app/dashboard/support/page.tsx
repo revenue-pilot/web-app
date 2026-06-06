@@ -147,11 +147,11 @@ export default function SupportDeckPage() {
 
             <button
               type="submit"
-              disabled={loading || !ticketSubject.trim() || !ticketMessage.trim()}
+              disabled={ticketLoading || !ticketSubject.trim() || !ticketMessage.trim()}
               className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-200 text-white font-bold text-xs py-2.5 rounded-xl shadow-md shadow-emerald-500/10 transition-all flex items-center justify-center gap-1.5"
             >
               <Send size={14} />
-              <span>{loading ? "Submitting..." : "Send Ticket"}</span>
+              <span>{submitted ? "Submitting..." : "Send Ticket"}</span>
             </button>
           </form>
         </div>

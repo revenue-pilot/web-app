@@ -13,6 +13,8 @@ export default function BillingPage() {
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [paymentResult, setPaymentResult] = useState<any>(null);
 
+  const [simulationState, setSimulationState] = useState<"Success" | "Failure">("Success");
+
   const billingInfo = billingData?.subscription || {
     name: "Revenue Plan",
     price: 1999,
@@ -70,7 +72,7 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {loading ? (
+      {billingLoading  ? (
         <div className="py-20 text-center text-gray-400">Loading subscription details...</div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -7,7 +7,12 @@ if (typeof window !== "undefined") {
   const originalFetch = window.fetch;
 
   window.fetch = async (input, init) => {
-    const url = typeof input === "string" ? input : input.url;
+    const url =
+  typeof input === "string"
+    ? input
+    : input instanceof Request
+    ? input.url
+    : input.toString();
 
     if (url?.includes("/api/auth/")) {
       return originalFetch(input, init);
