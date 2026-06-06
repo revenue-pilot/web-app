@@ -1,0 +1,116 @@
+name: GrowthPilot CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+  pull_request:
+    branches:
+      - main
+      - staging
+
+jobs:
+  audit-test-build:
+    name: Audit, Test & Compile Bundle
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Monorepo Dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate --schema=packages/database/prisma/schema.prisma
+
+      - name: Run ESLint Checks
+        run: npm run lint
+        continue-on-error: false
+
+      - name: Run Jest Test Suites
+        run: npm run test
+        env:
+          NODE_ENV: test
+          JWT_SECRET: "ci-test-secure-secret-key-32-chars-min"
+          DATABASE_URL: ""
+          DIRECT_URL: ""
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: Compile Monorepo Bundles
+        run: npm run build
+        env:
+          NODE_ENV: production
+          DATABASE_URL: ""
+          DIRECT_URL: ""
+
+  deploy-staging:
+    name: Deploy to Staging Environment
+    needs: audit-test-build
+    if: github.ref == 'refs/heads/staging' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Global Deployment CLIs
+        run: npm install -g vercel @railway/cli
+
+      - name: Deploy Frontend to Vercel Staging
+        run: vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes
+        working-directory: ./apps/web
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_STAGING_PROJECT_ID }}
+
+      - name: Deploy NestJS API to Railway Staging
+        run: railway up --service growthpilot-backend-staging --detach
+        working-directory: ./
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_STAGING_TOKEN }}
+
+  deploy-production:
+    name: Deploy to Production Environment
+    needs: audit-test-build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Global Deployment CLIs
+        run: npm install -g vercel @railway/cli
+
+      - name: Deploy Frontend to Vercel Production
+        run: vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes
+        working-directory: ./apps/web
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PRODUCTION_PROJECT_ID }}
+
+      - name: Deploy NestJS API to Railway Production
+        run: railway up --service growthpilot-backend-prod --detach
+        working-directory: ./
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_PRODUCTION_TOKEN }}

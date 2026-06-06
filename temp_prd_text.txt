@@ -1,0 +1,405 @@
+MASTER PRD GENERATION PROMPT — GROWTHPILOT
+You are a Principal Product Manager, Enterprise UX Architect, SaaS Founder, Technical Architect, Growth Strategist, Systems Designer, and Investor-Level Product Consultant.
+Your task is to create the definitive Product Requirements Document (PRD), Functional Specification, UX Blueprint, System Design Document, Information Architecture Specification, and Product Strategy Guide for GrowthPilot.
+This document must be written as if it will be handed directly to:
+Product Managers
+UX Designers
+UI Designers
+Frontend Engineers
+Backend Engineers
+AI Engineers
+QA Engineers
+DevOps Engineers
+Investors
+Agency Stakeholders
+Enterprise Customers
+The final document should be detailed enough that a world-class product team could build the entire platform without requiring additional clarification.
+
+PRODUCT OVERVIEW
+Product Name: GrowthPilot
+Category: Enterprise Marketing Intelligence &amp; Campaign Operations Platform
+Positioning: GrowthPilot is an AI-powered marketing operations platform that unifies campaign management, business intelligence, performance analytics, automation, reporting, client operations, and growth optimization into a single enterprise-grade system.
+The platform is designed for:
+Marketing Agencies
+Growth Teams
+Multi-Location Businesses
+Franchises
+Consultants
+E-Commerce Brands
+Enterprise Organizations
+GrowthPilot should feel like a combination of:
+Salesforce
+HubSpot
+Stripe
+Linear
+Notion
+Monday.com
+Triple Whale
+AgencyAnalytics
+while creating its own category.
+
+DESIGN PRINCIPLES
+The experience must embody:
+Apple-Level Simplicity
+Stripe-Level Clarity
+Linear-Level Speed
+Notion-Level Flexibility
+HubSpot-Level Business Intelligence
+Enterprise-Level Reliability
+Every screen must prioritize:
+Clarity
+Speed
+Context
+Confidence
+Actionability
+
+BRAND FOUNDATION
+Primary Color System
+Primary 50: #F2FBF7 Primary 100: #DDF5EA Primary 200: #BDEAD5 Primary 300: #93DAB8 Primary 400: #68C99C Primary 500: #50BB8F
+Requirements:
+Premium SaaS identity
+Dark mode
+Light mode
+Glassmorphism accents
+Modern gradients
+Enterprise trust signals
+Financial-grade visual quality
+
+USER ROLES
+Create a complete permissions matrix.
+Roles:
+Platform Super Admin
+Internal Support Admin
+Agency Owner
+Agency Manager
+Client Owner
+Marketing Manager
+Campaign Specialist
+Analyst
+Viewer
+Billing Administrator
+For every role define:
+Permissions
+Restrictions
+Accessible modules
+Data visibility
+Action limitations
+
+DOCUMENT STRUCTURE
+Create a complete enterprise specification covering the following 19 core product areas.
+For EACH section provide:
+Product Vision
+Business Objective
+User Goal
+Target Persona
+Page Purpose
+Information Architecture
+Navigation Placement
+Detailed UI Layout
+Desktop Layout
+Tablet Layout
+Mobile Layout
+Components Used
+Design Patterns
+User Journey
+User Flows
+Button Specifications
+Dropdown Specifications
+Table Specifications
+Filters
+Search Behavior
+Empty States
+Loading States
+Success States
+Error States
+Edge Cases
+API Requirements
+Backend Logic
+Database Relationships
+Event Tracking
+AI Opportunities
+Automation Opportunities
+Security Considerations
+Accessibility Requirements
+Future Roadmap
+
+PAGE 1
+COMMAND NEXUS
+(Executive Dashboard)
+Purpose:
+The central intelligence layer of the platform.
+Include:
+Executive KPIs
+ROAS
+Revenue
+Spend
+Client Health
+Growth Velocity
+Opportunity Signals
+Risk Alerts
+Forecasting
+Detail every:
+Widget
+Chart
+Card
+Action
+Filter
+Drilldown
+Interaction
+
+PAGE 2
+ORBIT WORKSPACES
+(Workspace Management)
+Cover:
+Multi-tenant architecture
+Workspace creation
+Workspace switching
+Workspace permissions
+Workspace analytics
+
+PAGE 3
+CLIENT CONSTELLATION
+(Client Management)
+Cover:
+Client lifecycle
+Account assignment
+Client health scores
+Revenue contribution
+Growth tracking
+
+PAGE 4
+GROWTHPILOT STUDIO
+(Campaign Operations)
+Cover:
+Google Ads
+Meta Ads
+Campaign creation
+Campaign management
+Budget allocation
+Creative management
+Audience management
+
+PAGE 5
+NEURAL OPS
+(AI Operations Center)
+Cover:
+AI campaign management
+AI optimization
+AI forecasting
+AI recommendations
+AI decision engine
+
+PAGE 6
+PULSE MATRIX
+(Performance Intelligence)
+Cover:
+Attribution
+Funnel analytics
+Cohort analysis
+Channel comparison
+Forecast models
+
+PAGE 7
+REVENUE COMMAND
+(Billing &amp; Subscription)
+Include:
+15-Day Trial
+Plans:
+Standard ₹1,199
+Growth ₹1,999
+Premium ₹2,499
+Razorpay Automation
+Invoices
+Taxes
+Subscription Lifecycle
+Failed Payments
+Upgrade Flows
+Downgrade Flows
+
+PAGE 8
+CREW COMMAND
+(Team Management)
+Include:
+Roles
+Permissions
+Invitations
+Teams
+Approval Workflows
+
+PAGE 9
+AUTOMATION FORGE
+(Automation Engine)
+Cover:
+Workflow Builder
+Triggers
+Conditions
+Actions
+Campaign Automations
+AI Automations
+
+PAGE 10
+CREATIVE VAULT
+(Asset Library)
+Cover:
+Images
+Videos
+Documents
+Templates
+Brand Assets
+Versioning
+
+PAGE 11
+CONNECTION HUB
+(Integration Center)
+Cover:
+Google Ads
+Meta
+GA4
+GTM
+Stripe
+Razorpay
+Slack
+WhatsApp
+HubSpot
+Zapier
+Webhooks
+OpenAI
+Anthropic
+
+PAGE 12
+INSIGHT ARCHIVE
+(Reporting Center)
+Cover:
+PDF
+Excel
+CSV
+White Label
+Scheduled Reports
+Agency Reports
+Client Reports
+
+PAGE 13
+SIGNAL VAULT
+(Notification Center)
+Cover:
+Alerts
+Warnings
+Recommendations
+System Notifications
+AI Notifications
+Communication Preferences
+
+PAGE 14
+CONTROL DECK
+(Settings &amp; Preferences)
+Cover:
+Profile
+Workspace
+Organization
+Branding
+Preferences
+Domains
+Email Templates
+
+PAGE 15
+FORTRESS
+(Security Center)
+Cover:
+Authentication
+2FA
+Audit Logs
+RBAC
+Session Control
+Threat Monitoring
+Compliance
+SOC2
+GDPR
+
+PAGE 16
+TIMELINE ENGINE
+(Activity Intelligence)
+Cover:
+User Actions
+Campaign Changes
+Automation History
+System Events
+Audit Trail
+
+PAGE 17
+INSIGHT ENGINE
+(AI Insights Platform)
+Cover:
+Predictive Analytics
+Opportunity Detection
+Growth Recommendations
+Forecasting
+Strategic Suggestions
+
+PAGE 18
+MARKETPLACE
+(App Marketplace)
+Cover:
+Extensions
+Templates
+Partner Apps
+Automation Packs
+AI Packs
+Agency Packs
+
+PAGE 19
+COMMAND CORE
+(Admin Control Center)
+Cover:
+Platform Health
+Revenue Analytics
+Subscriptions
+API Monitoring
+Support Tools
+Feature Flags
+Tenant Management
+Impersonation
+System Governance
+
+ENTERPRISE ARCHITECTURE SECTION
+Include:
+Complete Platform Architecture
+Frontend Architecture
+Backend Architecture
+Database Architecture
+Microservices Strategy
+Caching Strategy
+Queue Architecture
+AI Architecture
+Analytics Architecture
+Integration Architecture
+Multi-Tenant Strategy
+Deployment Architecture
+AWS Architecture
+Cloudflare Architecture
+CI/CD Architecture
+Disaster Recovery Architecture
+
+AI ECOSYSTEM
+Create a fully branded AI ecosystem.
+Include:
+AI Campaign Creator
+AI Budget Optimizer
+AI Growth Advisor
+AI Forecast Engine
+AI Opportunity Scanner
+AI Attribution Analyst
+AI Performance Coach
+AI Automation Assistant
+Each feature must include:
+Purpose
+Workflow
+Inputs
+Outputs
+Model Requirements
+Data Requirements
+UI Experience
+Business Value
+
+FINAL DELIVERABLE
+Produce a world-class enterprise PRD, UX Blueprint, Functional Specification, System Design Document, and Product Strategy Guide exceeding the quality of documentation used by Salesforce, HubSpot, Stripe, Notion, Monday.com, Linear, and leading venture-backed SaaS companies.
+The final output should be detailed enough that product, design, engineering, QA, operations, and executive teams can build GrowthPilot without requiring additional clarification.

@@ -1,0 +1,2 @@
+-- Baseline migration: DB already exists
+-- Tables were created manually or via a previous deploy

@@ -1,0 +1,227 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 210 20% 98%; /* Light gray-white background */
+  --foreground: 220 20% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 20% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 20% 12%;
+  
+  /* RevenuePilot Brand Primary: #50BB8F */
+  --primary: 155.3 44.8% 52.4%;
+  --primary-foreground: 0 0% 100%;
+  
+  /* RevenuePilot Brand Light Tint: #DDF5EA */
+  --secondary: 153 60% 91%;
+  --secondary-foreground: 155 45% 20%;
+  
+  --muted: 210 10% 94%;
+  --muted-foreground: 215 15% 45%;
+  
+  /* #F2FBF7 */
+  --accent: 153 53% 97%;
+  --accent-foreground: 155.3 44.8% 52.4%;
+  
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  
+  --border: 210 15% 92%;
+  --input: 210 15% 92%;
+  --ring: 155.3 44.8% 52.4%;
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: 224 71% 4%;
+  --foreground: 210 20% 98%;
+  --card: 224 71% 4%;
+  --card-foreground: 210 20% 98%;
+  --popover: 224 71% 4%;
+  --popover-foreground: 210 20% 98%;
+  --primary: 155.3 44.8% 52.4%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 215 27.9% 16.9%;
+  --secondary-foreground: 210 20% 98%;
+  --muted: 215 27.9% 16.9%;
+  --muted-foreground: 217.9 10.6% 64.9%;
+  --accent: 215 27.9% 16.9%;
+  --accent-foreground: 210 20% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 215 27.9% 16.9%;
+  --input: 215 27.9% 16.9%;
+  --ring: 155.3 44.8% 52.4%;
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Premium Dashboard Card Utilities */
+.premium-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02), 0 4px 12px 0 rgba(0, 0, 0, 0.03);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-card:hover {
+  box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.03), 0 10px 20px 0 rgba(0, 0, 0, 0.05);
+}
+
+.dark .premium-card {
+  background: #0D121F;
+  border-color: #1B2438;
+  box-shadow: none;
+}
+
+/* Scrollbar tweaks */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* Global utility overrides for manual dark mode support */
+
+/* 1. Client Dashboard / Client Pages (Light by default, overridden in Dark Mode) */
+.dark .bg-white,
+.dark [class*="bg-white"] {
+  background-color: #0D121F !important;
+}
+
+.dark .bg-\[\#F4F6F5\],
+.dark .bg-\[\#F8FAF9\] {
+  background-color: #080B11 !important;
+}
+
+.dark .border-gray-200,
+.dark .border-gray-200\/80,
+.dark .border-gray-100,
+.dark .border-gray-100\/60,
+.dark .border-gray-300,
+.dark .border-gray-300\/60 {
+  border-color: #1B2438 !important;
+}
+
+.dark .text-gray-900,
+.dark [class*="text-gray-900"] {
+  color: #ffffff !important;
+}
+
+.dark .text-gray-800,
+.dark [class*="text-gray-800"] {
+  color: #f4f4f5 !important;
+}
+
+.dark .text-gray-700,
+.dark [class*="text-gray-700"] {
+  color: #e4e4e7 !important;
+}
+
+.dark .text-gray-600,
+.dark [class*="text-gray-600"] {
+  color: #d4d4d8 !important;
+}
+
+.dark .text-gray-500,
+.dark [class*="text-gray-500"] {
+  color: #a1a1aa !important;
+}
+
+.dark .text-gray-400,
+.dark [class*="text-gray-400"] {
+  color: #71717a !important;
+}
+
+.dark input, 
+.dark select, 
+.dark textarea {
+  background-color: #0A0F1D !important;
+  border-color: #1C283F !important;
+  color: #f4f4f5 !important;
+}
+
+/* 2. Admin Dashboard / Admin Pages (Dark by default, overridden in Light Mode) */
+html:not(.dark) .bg-\[\#0D121F\] {
+  background-color: #ffffff !important;
+}
+
+html:not(.dark) .bg-\[\#080B11\] {
+  background-color: #F4F6F5 !important;
+}
+
+html:not(.dark) .bg-\[\#0E1424\] {
+  background-color: #EBEFEF !important;
+}
+
+html:not(.dark) .bg-\[\#0A0F1D\] {
+  background-color: #F8FAFC !important;
+}
+
+html:not(.dark) .border-\[\#1B2438\],
+html:not(.dark) .border-\[\#1C283F\] {
+  border-color: #E2E8F0 !important;
+}
+
+html:not(.dark) .bg-\[\#0D121F\] .text-white,
+html:not(.dark) .bg-\[\#0A0F1D\] .text-white,
+html:not(.dark) h1.text-white,
+html:not(.dark) h2.text-white,
+html:not(.dark) h3.text-white,
+html:not(.dark) h4.text-white,
+html:not(.dark) th.text-white,
+html:not(.dark) td.text-white {
+  color: #0F172A !important;
+}
+
+html:not(.dark) .text-zinc-500 {
+  color: #64748B !important;
+}
+
+html:not(.dark) .text-zinc-400 {
+  color: #475569 !important;
+}
+
+html:not(.dark) .text-zinc-300 {
+  color: #334155 !important;
+}
+
+html:not(.dark) .text-zinc-100 {
+  color: #1F2937 !important;
+}
+
+html:not(.dark) .text-emerald-400 {
+  color: #059669 !important;
+}
+
+html:not(.dark) .text-emerald-500 {
+  color: #059669 !important;
+}
+
+html:not(.dark) input,
+html:not(.dark) select,
+html:not(.dark) textarea {
+  background-color: #ffffff !important;
+  border-color: #CBD5E1 !important;
+  color: #0F172A !important;
+}
+
+html:not(.dark) .bg-white\/50 {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
