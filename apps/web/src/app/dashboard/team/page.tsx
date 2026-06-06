@@ -79,7 +79,7 @@ export default function TeamPage() {
                 </tr>
               </thead>
               <tbody className="text-sm font-medium text-gray-700">
-                {members.map((member) => (
+                {members.map((member: any) => (
                   <tr key={member.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                     <td className="py-4">
                       <div className="flex items-center gap-3">
