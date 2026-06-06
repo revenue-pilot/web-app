@@ -99,7 +99,7 @@ export default function ClientsPage() {
                 </tr>
               </thead>
               <tbody className="text-sm font-medium text-gray-700 dark:text-zinc-200">
-                {clients.map((client) => (
+               {clientsList.map((client: any) => (
                   <tr key={client.id} className="border-b border-gray-50 dark:border-[#1B2438]/50 hover:bg-gray-50/50 dark:hover:bg-[#151D2F]/50 transition-colors">
                     <td className="py-4">
                       <div className="flex items-center gap-3">
