@@ -40,11 +40,21 @@ export class EnterpriseController {
     return (req as any).impersonatedUserEmail || (req.headers['x-user-email'] as string) || 'arjun@Revenuepilot.com';
   }
 
+  private ensureDatabaseConnected() {
+    if (!this.prismaService.isConnected) {
+      throw new BadRequestException('Database unavailable. Please try again later.');
+    }
+  }
+
   // Auth & Onboarding Login Handler
   @Post('auth/login')
   async login(@Body() body: { email: string; password?: string }) {
     const email = body.email.trim().toLowerCase();
     const password = body.password || '';
+
+    if (!this.prismaService.isConnected) {
+      return { success: false, message: 'Database unavailable. Please try again later.' };
+    }
 
     if (this.prismaService.isConnected) {
       let user = await this.prismaService.client.user.findUnique({
@@ -92,15 +102,6 @@ export class EnterpriseController {
       }
 
       return { success: true, user };
-    } else {
-      const sim = this.prismaService.simulator.getOrCreateUser(email);
-      // In simulator mode, check password
-      if (password && sim.user.passwordHash && sim.user.passwordHash !== 'password_123') {
-        if (!verifyPassword(password, sim.user.passwordHash)) {
-          return { success: false, message: 'Invalid credentials. Please verify your password.' };
-        }
-      }
-      return { success: true, user: sim.user };
     }
   }
 
@@ -109,6 +110,10 @@ export class EnterpriseController {
     const email = body.email.trim().toLowerCase();
     const password = body.password || '';
     const name = body.name || email.split('@')[0];
+
+    if (!this.prismaService.isConnected) {
+      return { success: false, message: 'Database unavailable. Please try again later.' };
+    }
 
     if (this.prismaService.isConnected) {
       const existing = await this.prismaService.client.user.findUnique({ where: { email } });
@@ -139,12 +144,6 @@ export class EnterpriseController {
       // Dispatch Welcome Email
       await this.emailService.sendWelcomeEmail(user.email, user.name || user.email.split('@')[0]);
       return { success: true, user };
-    } else {
-      const sim = this.prismaService.simulator.getOrCreateUser(email);
-      if (password) {
-        sim.user.passwordHash = hashPassword(password);
-      }
-      return { success: true, user: sim.user };
     }
   }
 
@@ -181,6 +180,10 @@ export class EnterpriseController {
 
     this.logger.log(`Magic link requested for ${email}. Token: ${token}`);
     
+    if (!this.prismaService.isConnected) {
+      return { success: false, message: 'Database unavailable. Please try again later.' };
+    }
+
     // Ensure user profile exists or registers onboarding tenant dynamically
     if (this.prismaService.isConnected) {
       const user = await this.prismaService.client.user.findUnique({ where: { email } });
@@ -207,8 +210,6 @@ export class EnterpriseController {
         });
         this.logger.log(`Created new tenant profile during Magic Link signup for ${email}`);
       }
-    } else {
-      this.prismaService.simulator.getOrCreateUser(email);
     }
 
     await this.emailService.sendMagicLinkEmail(email, token);
@@ -230,28 +231,21 @@ export class EnterpriseController {
     const email = tokenData.email;
     this.magicLinkTokens.delete(body.token); // single use token
 
-    let userPayload: any;
-    if (this.prismaService.isConnected) {
-      const user = await this.prismaService.client.user.findUnique({
-        where: { email },
-        include: { organization: true }
-      });
-      if (!user) return { success: false, message: 'User profile not found.' };
-      userPayload = {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role
-      };
-    } else {
-      const sim = this.prismaService.simulator.getOrCreateUser(email);
-      userPayload = {
-        id: sim.user.id,
-        email: sim.user.email,
-        name: sim.user.name,
-        role: sim.user.role
-      };
+    if (!this.prismaService.isConnected) {
+      return { success: false, message: 'Database unavailable. Please try again later.' };
     }
+
+    const user = await this.prismaService.client.user.findUnique({
+      where: { email },
+      include: { organization: true }
+    });
+    if (!user) return { success: false, message: 'User profile not found.' };
+    const userPayload = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role
+    };
 
     return {
       success: true,
@@ -265,6 +259,10 @@ export class EnterpriseController {
     const email = body.email.trim().toLowerCase();
     const name = body.name || email.split('@')[0];
     this.logger.log(`OAuth Social login sync callback requested from provider: ${body.provider || 'Google'} for ${email}`);
+
+    if (!this.prismaService.isConnected) {
+      return { success: false, message: 'Database unavailable. Please try again later.' };
+    }
 
     let userPayload: any;
     if (this.prismaService.isConnected) {
@@ -303,14 +301,6 @@ export class EnterpriseController {
         name: user.name,
         role: user.role
       };
-    } else {
-      const sim = this.prismaService.simulator.getOrCreateUser(email);
-      userPayload = {
-        id: sim.user.id,
-        email: sim.user.email,
-        name: sim.user.name,
-        role: sim.user.role
-      };
     }
 
     return {
@@ -323,97 +313,86 @@ export class EnterpriseController {
   // Workspaces (Orbit Workspaces)
   @Get('workspaces')
   async getWorkspaces(@Req() req: Request) {
-    const email = this.getUserEmail(req);
-    if (this.prismaService.isConnected) {
-      const user = await this.prismaService.client.user.findUnique({ where: { email } });
-      if (!user) return [];
-      const clients = await this.prismaService.client.client.findMany({
-        where: { organizationId: user.organizationId }
-      });
-      return [
-        {
-          id: 'space_1',
-          name: `${user.name}'s Workspace`,
-          role: user.role === 'ADMIN' ? 'Platform Admin' : 'Agency Owner',
-          activeCampaigns: 0,
-          spend: 0,
-          clientCount: clients.length,
-          maxClients: 25
-        }
-      ];
-    } else {
-      const sim = this.prismaService.simulator.getOrCreateUser(email);
-      return this.prismaService.simulator.getWorkspaces(sim.org.id);
+    if (!this.prismaService.isConnected) {
+      return [];
     }
+    const email = this.getUserEmail(req);
+    const user = await this.prismaService.client.user.findUnique({ where: { email } });
+    if (!user) return [];
+    const clients = await this.prismaService.client.client.findMany({
+      where: { organizationId: user.organizationId }
+    });
+    return [
+      {
+        id: 'space_1',
+        name: `${user.name}'s Workspace`,
+        role: user.role === 'ADMIN' ? 'Platform Admin' : 'Agency Owner',
+        activeCampaigns: 0,
+        spend: 0,
+        clientCount: clients.length,
+        maxClients: 25
+      }
+    ];
   }
 
   @Post('workspaces')
   async createWorkspace(@Req() req: Request, @Body() body: any) {
-    const email = this.getUserEmail(req);
-    if (this.prismaService.isConnected) {
-      const user = await this.prismaService.client.user.findUnique({ where: { email } });
-      if (!user) return { success: false, message: 'User not found' };
-      
-      const newClient = await this.prismaService.client.client.create({
-        data: {
-          name: body.name,
-          organizationId: user.organizationId
-        }
-      });
-      return { success: true, id: newClient.id, name: newClient.name, activeCampaigns: 0, spend: 0 };
-    } else {
-      const sim = this.prismaService.simulator.getOrCreateUser(email);
-      const ws = this.prismaService.simulator.createWorkspace(sim.org.id, body.name, 'Agency Owner');
-      return { success: true, ...ws };
+    if (!this.prismaService.isConnected) {
+      return { success: false, message: 'Database unavailable. Please try again later.' };
     }
+    const email = this.getUserEmail(req);
+    const user = await this.prismaService.client.user.findUnique({ where: { email } });
+    if (!user) return { success: false, message: 'User not found' };
+    const newClient = await this.prismaService.client.client.create({
+      data: {
+        name: body.name,
+        organizationId: user.organizationId
+      }
+    });
+    return { success: true, id: newClient.id, name: newClient.name, activeCampaigns: 0, spend: 0 };
   }
 
   // Clients (Client Constellation)
   @Get('clients')
   async getClients(@Req() req: Request) {
-    const email = this.getUserEmail(req);
-    if (this.prismaService.isConnected) {
-      const user = await this.prismaService.client.user.findUnique({ where: { email } });
-      if (!user) return [];
-      const clients = await this.prismaService.client.client.findMany({
-        where: { organizationId: user.organizationId }
-      });
-      return clients.map(c => ({
-        id: c.id,
-        name: c.name,
-        health: 100,
-        spend: 0,
-        conversions: 0,
-        roas: '0x',
-        status: 'Active',
-        industry: c.industry || 'General',
-        email: `${c.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@Revenuepilot.com`
-      }));
-    } else {
-      const sim = this.prismaService.simulator.getOrCreateUser(email);
-      return this.prismaService.simulator.getClients(sim.org.id);
+    if (!this.prismaService.isConnected) {
+      return [];
     }
+    const email = this.getUserEmail(req);
+    const user = await this.prismaService.client.user.findUnique({ where: { email } });
+    if (!user) return [];
+    const clients = await this.prismaService.client.client.findMany({
+      where: { organizationId: user.organizationId }
+    });
+    return clients.map(c => ({
+      id: c.id,
+      name: c.name,
+      health: 100,
+      spend: 0,
+      conversions: 0,
+      roas: '0x',
+      status: 'Active',
+      industry: c.industry || 'General',
+      email: `${c.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@Revenuepilot.com`
+    }));
   }
 
   @Post('clients')
   async createClient(@Req() req: Request, @Body() body: any) {
-    const email = this.getUserEmail(req);
-    if (this.prismaService.isConnected) {
-      const user = await this.prismaService.client.user.findUnique({ where: { email } });
-      if (!user) return { success: false };
-      const client = await this.prismaService.client.client.create({
-        data: {
-          name: body.name,
-          industry: body.industry,
-          organizationId: user.organizationId
-        }
-      });
-      return { success: true, id: client.id, health: 100, spend: 0, conversions: 0, status: 'Onboarding', name: client.name, industry: client.industry };
-    } else {
-      const sim = this.prismaService.simulator.getOrCreateUser(email);
-      const client = this.prismaService.simulator.createClient(sim.org.id, body.name, body.industry, body.email);
-      return { success: true, ...client };
+    if (!this.prismaService.isConnected) {
+      return { success: false, message: 'Database unavailable. Please try again later.' };
     }
+    const email = this.getUserEmail(req);
+    const user = await this.prismaService.client.user.findUnique({ where: { email } });
+    if (!user) return { success: false };
+    const client = await this.prismaService.client.client.create({
+      data: {
+        name: body.name,
+        industry: body.industry,
+        organizationId: user.organizationId
+      }
+    });
+    return { success: true, id: client.id, health: 100, spend: 0, conversions: 0, status: 'Onboarding', name: client.name, industry: client.industry };
   }
 
   // Analytics (Pulse Matrix & Insight Engine)
@@ -554,6 +533,9 @@ export class EnterpriseController {
   // Billing (Revenue Command)
   @Get('billing/subscriptions')
   async getBillingInfo(@Req() req: Request) {
+    if (!this.prismaService.isConnected) {
+      throw new BadRequestException('Database unavailable. Please try again later.');
+    }
     try {
     const email = this.getUserEmail(req);
     let plan = 'starter';
@@ -567,10 +549,6 @@ export class EnterpriseController {
         orgId = user.organizationId;
         plan = (user.organization.subscriptions[0]?.tier || 'STARTER').toLowerCase();
       }
-    } else {
-      const sim = this.prismaService.simulator.getOrCreateUser(email);
-      orgId = sim.org.id;
-      plan = sim.org.plan.toLowerCase();
     }
 
     const limitsMap = {
@@ -593,14 +571,22 @@ export class EnterpriseController {
       usage.team = await this.prismaService.client.user.count({
         where: { organizationId: orgId }
       });
-    } else {
-      usage.campaigns = this.prismaService.simulator.getCampaigns(orgId).length;
-      usage.workspaces = this.prismaService.simulator.getWorkspaces(orgId).length;
-      usage.team = this.prismaService.simulator.users.filter(u => u.organizationId === orgId).length;
-      usage.clients = this.prismaService.simulator.getClients(orgId).length;
+      usage.clients = await this.prismaService.client.client.count({
+        where: { organizationId: orgId }
+      });
     }
 
-    const priceMap = { starter: 999, Revenue: 1999, pro: 4999, enterprise: 15000 };
+    const priceMap = { starter: 999, growth: 1999, professional: 4999, agency: 4999, enterprise: 15000 };
+    const subscription = await this.prismaService.client.subscription.findFirst({
+      where: { organizationId: orgId, status: 'ACTIVE' },
+      orderBy: { updatedAt: 'desc' }
+    });
+    const invoices = await this.prismaService.client.invoice.findMany({
+      where: { subscription: { organizationId: orgId } },
+      orderBy: { createdAt: 'desc' },
+      take: 10
+    });
+    const nextBilling = subscription ? new Date(subscription.updatedAt.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : null;
 
     return {
       plan: plan.toUpperCase(),
@@ -608,8 +594,14 @@ export class EnterpriseController {
       usage,
       price: priceMap[plan] || 999,
       period: 'month',
-      nextBilling: 'Jul 19, 2026',
-      invoices: this.prismaService.simulator.invoices
+      nextBilling,
+      invoices: invoices.map(inv => ({
+        id: inv.id,
+        amount: inv.amount,
+        status: inv.status,
+        pdfUrl: inv.pdfUrl,
+        createdAt: inv.createdAt
+      }))
     };
     } catch (e) {
       this.logger.error('getBillingInfo error', e);
@@ -627,6 +619,9 @@ export class EnterpriseController {
 
   @Post('billing/checkout')
   async processCheckout(@Req() req: Request, @Body() body: any) {
+    if (!this.prismaService.isConnected) {
+      return { success: false, message: 'Database unavailable. Please try again later.' };
+    }
     const email = this.getUserEmail(req);
     const planName = (body.planName || 'Revenue').toLowerCase();
     const amount = body.amount || 1999;
@@ -640,59 +635,66 @@ export class EnterpriseController {
     }
   }
 
+  @Get('billing/invoices')
+  async getInvoices(@Req() req: Request) {
+    if (!this.prismaService.isConnected) {
+      return [];
+    }
+    const email = this.getUserEmail(req);
+    const user = await this.prismaService.client.user.findUnique({ where: { email }, include: { organization: true } });
+    if (!user) return [];
+    const invoices = await this.prismaService.client.invoice.findMany({
+      where: { subscription: { organizationId: user.organizationId } },
+      orderBy: { createdAt: 'desc' }
+    });
+    return invoices.map(inv => ({
+      id: inv.id,
+      amount: inv.amount,
+      status: inv.status,
+      pdfUrl: inv.pdfUrl,
+      createdAt: inv.createdAt
+    }));
+  }
+
   // Team Management (Crew Command)
   @Get('team')
   async getTeamMembers(@Req() req: Request) {
-    const email = this.getUserEmail(req);
-    if (this.prismaService.isConnected) {
-      const user = await this.prismaService.client.user.findUnique({ where: { email } });
-      if (!user) return [];
-      const users = await this.prismaService.client.user.findMany({
-        where: { organizationId: user.organizationId }
-      });
-      return users.map(u => ({
-        id: u.id,
-        name: u.name || u.email.split('@')[0],
-        email: u.email,
-        role: u.role === 'ADMIN' ? 'Platform Admin' : 'Agency Owner',
-        status: 'Active',
-        avatar: ''
-      }));
-    } else {
-      const sim = this.prismaService.simulator.getOrCreateUser(email);
-      return this.prismaService.simulator.users
-        .filter(u => u.organizationId === sim.org.id)
-        .map(u => ({ ...u, status: 'Active', avatar: '' }));
+    if (!this.prismaService.isConnected) {
+      return [];
     }
+    const email = this.getUserEmail(req);
+    const user = await this.prismaService.client.user.findUnique({ where: { email } });
+    if (!user) return [];
+    const users = await this.prismaService.client.user.findMany({
+      where: { organizationId: user.organizationId }
+    });
+    return users.map(u => ({
+      id: u.id,
+      name: u.name || u.email.split('@')[0],
+      email: u.email,
+      role: u.role === 'ADMIN' ? 'Platform Admin' : 'Agency Owner',
+      status: 'Active',
+      avatar: ''
+    }));
   }
 
   @Post('team/invite')
   async inviteMember(@Req() req: Request, @Body() body: any) {
+    if (!this.prismaService.isConnected) {
+      return { success: false, message: 'Database unavailable. Please try again later.' };
+    }
     const email = this.getUserEmail(req);
-    if (this.prismaService.isConnected) {
-      const user = await this.prismaService.client.user.findUnique({ where: { email } });
-      if (!user) return { success: false };
-      const newUser = await this.prismaService.client.user.create({
-        data: {
-          email: body.email,
-          name: body.email.split('@')[0],
-          role: body.role === 'Admin' ? 'ADMIN' : 'CLIENT',
-          organizationId: user.organizationId
-        }
-      });
-      return { success: true, member: { id: newUser.id, name: newUser.name, email: newUser.email, role: body.role, status: 'Active' } };
-    } else {
-      const sim = this.prismaService.simulator.getOrCreateUser(email);
-      const newUser = {
-        id: `user_${Date.now()}`,
+    const user = await this.prismaService.client.user.findUnique({ where: { email } });
+    if (!user) return { success: false, message: 'User not found.' };
+    const newUser = await this.prismaService.client.user.create({
+      data: {
         email: body.email,
         name: body.email.split('@')[0],
-        role: body.role,
-        organizationId: sim.org.id
-      };
-      this.prismaService.simulator.users.push(newUser);
-      return { success: true, member: { ...newUser, status: 'Active' } };
-    }
+        role: body.role === 'Admin' ? 'ADMIN' : 'CLIENT',
+        organizationId: user.organizationId
+      }
+    });
+    return { success: true, member: { id: newUser.id, name: newUser.name, email: newUser.email, role: body.role, status: 'Active' } };
   }
 
   private mapDbCreativeToFrontend(asset: any) {
@@ -734,114 +736,104 @@ export class EnterpriseController {
   // Assets Vault (Creative Vault)
   @Get('creatives')
   async getCreatives(@Req() req: Request) {
-    const email = this.getUserEmail(req);
-    if (this.prismaService.isConnected) {
-      const user = await this.prismaService.client.user.findUnique({ where: { email } });
-      if (!user) return [];
-      const creatives = await this.prismaService.client.creativeAsset.findMany({
-        where: { organizationId: user.organizationId },
-        include: { versions: true }
-      });
-      return creatives.map(c => this.mapDbCreativeToFrontend(c));
-    } else {
-      const sim = this.prismaService.simulator.getOrCreateUser(email);
-      return this.prismaService.simulator.getCreatives(sim.org.id);
+    if (!this.prismaService.isConnected) {
+      return [];
     }
+    const email = this.getUserEmail(req);
+    const user = await this.prismaService.client.user.findUnique({ where: { email } });
+    if (!user) return [];
+    const creatives = await this.prismaService.client.creativeAsset.findMany({
+      where: { organizationId: user.organizationId },
+      include: { versions: true }
+    });
+    return creatives.map(c => this.mapDbCreativeToFrontend(c));
   }
 
   @Post('creatives')
   async createCreative(@Req() req: Request, @Body() body: any) {
-    const email = this.getUserEmail(req);
-    if (this.prismaService.isConnected) {
-      const user = await this.prismaService.client.user.findUnique({ where: { email } });
-      if (!user) return null;
-      const asset = await this.prismaService.client.creativeAsset.create({
-        data: {
-          organizationId: user.organizationId,
-          clientId: 'default',
-          assetType: body.type || 'IMAGE',
-          assetName: body.name,
-          fileUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80',
-          format: body.type || 'png'
-        },
-        include: { versions: true }
-      });
-      return this.mapDbCreativeToFrontend(asset);
-    } else {
-      const sim = this.prismaService.simulator.getOrCreateUser(email);
-      return this.prismaService.simulator.createCreative(sim.org.id, body.name, body.type, body.size, body.tag);
+    if (!this.prismaService.isConnected) {
+      return null;
     }
+    const email = this.getUserEmail(req);
+    const user = await this.prismaService.client.user.findUnique({ where: { email } });
+    if (!user) return null;
+    const asset = await this.prismaService.client.creativeAsset.create({
+      data: {
+        organizationId: user.organizationId,
+        clientId: 'default',
+        assetType: body.type || 'IMAGE',
+        assetName: body.name,
+        fileUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80',
+        format: body.type || 'png'
+      },
+      include: { versions: true }
+    });
+    return this.mapDbCreativeToFrontend(asset);
   }
 
   @Post('creatives/generate-ratios')
   async generateRatio(@Req() req: Request, @Body() body: any) {
-    const email = this.getUserEmail(req);
-    if (this.prismaService.isConnected) {
-      const asset = await this.prismaService.client.creativeAsset.findUnique({
-        where: { id: body.assetId },
-        include: { versions: true }
-      });
-      if (!asset) return { success: false };
-      
-      const version = asset.versions.find(v => v.ratio === body.ratio);
-      if (!version) {
-        let w = 1080;
-        let h = 1080;
-        if (body.ratio === '9:16') { w = 1080; h = 1920; }
-        else if (body.ratio === '16:9') { w = 1920; h = 1080; }
-        else if (body.ratio === '1.91:1') { w = 1200; h = 628; }
-        else if (body.ratio === '4:1') { w = 1200; h = 300; }
-        else if (body.ratio === '4:5') { w = 1080; h = 1350; }
-
-        await this.prismaService.client.creativeVersion.create({
-          data: {
-            assetId: asset.id,
-            ratio: body.ratio,
-            width: w,
-            height: h,
-            generatedByAI: true,
-            status: 'READY'
-          }
-        });
-      }
-      
-      const updatedAsset = await this.prismaService.client.creativeAsset.findUnique({
-        where: { id: body.assetId },
-        include: { versions: true }
-      });
-      return { success: true, asset: this.mapDbCreativeToFrontend(updatedAsset) };
-    } else {
-      const sim = this.prismaService.simulator.getOrCreateUser(email);
-      return this.prismaService.simulator.generateRatio(body);
+    if (!this.prismaService.isConnected) {
+      return { success: false, message: 'Database unavailable. Please try again later.' };
     }
+    const asset = await this.prismaService.client.creativeAsset.findUnique({
+      where: { id: body.assetId },
+      include: { versions: true }
+    });
+    if (!asset) return { success: false };
+    const version = asset.versions.find(v => v.ratio === body.ratio);
+    if (!version) {
+      let w = 1080;
+      let h = 1080;
+      if (body.ratio === '9:16') { w = 1080; h = 1920; }
+      else if (body.ratio === '16:9') { w = 1920; h = 1080; }
+      else if (body.ratio === '1.91:1') { w = 1200; h = 628; }
+      else if (body.ratio === '4:1') { w = 1200; h = 300; }
+      else if (body.ratio === '4:5') { w = 1080; h = 1350; }
+
+      await this.prismaService.client.creativeVersion.create({
+        data: {
+          assetId: asset.id,
+          ratio: body.ratio,
+          width: w,
+          height: h,
+          generatedByAI: true,
+          status: 'READY'
+        }
+      });
+    }
+
+    const updatedAsset = await this.prismaService.client.creativeAsset.findUnique({
+      where: { id: body.assetId },
+      include: { versions: true }
+    });
+    return { success: true, asset: this.mapDbCreativeToFrontend(updatedAsset) };
   }
 
   @Post('campaigns/deploy')
   async deployCampaign(@Req() req: Request, @Body() body: any) {
+    if (!this.prismaService.isConnected) {
+      return { success: false, message: 'Database unavailable. Please try again later.' };
+    }
     const email = this.getUserEmail(req);
-    if (this.prismaService.isConnected) {
-      const user = await this.prismaService.client.user.findUnique({ where: { email } });
-      if (user) {
-        const client = await this.prismaService.client.client.findFirst({ where: { organizationId: user.organizationId } });
-        if (client) {
-          let account = await this.prismaService.client.adAccount.findFirst({ where: { clientId: client.id } });
-          if (!account) {
-            account = await this.prismaService.client.adAccount.create({
-              data: { clientId: client.id, platform: 'GOOGLE_ADS', platformId: 'acc_123', status: 'ACTIVE' }
-            });
-          }
-          await this.prismaService.client.campaign.create({
-            data: {
-              adAccountId: account.id,
-              name: body.campaignName || 'Campaign Studio Live',
-              status: 'ACTIVE'
-            }
+    const user = await this.prismaService.client.user.findUnique({ where: { email } });
+    if (user) {
+      const client = await this.prismaService.client.client.findFirst({ where: { organizationId: user.organizationId } });
+      if (client) {
+        let account = await this.prismaService.client.adAccount.findFirst({ where: { clientId: client.id } });
+        if (!account) {
+          account = await this.prismaService.client.adAccount.create({
+            data: { clientId: client.id, platform: 'GOOGLE_ADS', platformId: 'acc_123', status: 'ACTIVE' }
           });
         }
+        await this.prismaService.client.campaign.create({
+          data: {
+            adAccountId: account.id,
+            name: body.campaignName || 'Campaign Studio Live',
+            status: 'ACTIVE'
+          }
+        });
       }
-    } else {
-      const sim = this.prismaService.simulator.getOrCreateUser(email);
-      this.prismaService.simulator.deployCampaign(sim.org.id, body.campaignName, body.budget);
     }
     return {
       success: true,
@@ -860,26 +852,33 @@ export class EnterpriseController {
 
   // Notifications (Signal Vault)
   @Get('notifications')
-  getNotifications(@Req() req: Request) {
+  async getNotifications(@Req() req: Request) {
     const email = this.getUserEmail(req);
-    if (this.prismaService.isConnected) {
+    if (!this.prismaService.isConnected) {
       return [];
-    } else {
-      const sim = this.prismaService.simulator.getOrCreateUser(email);
-      return this.prismaService.simulator.notifications;
     }
+    const user = await this.prismaService.client.user.findUnique({ where: { email } });
+    if (!user) return [];
+    return await this.prismaService.client.notification.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 20
+    });
   }
 
   // Activity Intelligence (Timeline Engine)
   @Get('activity-logs')
-  getActivityLogs(@Req() req: Request) {
+  async getActivityLogs(@Req() req: Request) {
     const email = this.getUserEmail(req);
-    if (this.prismaService.isConnected) {
+    if (!this.prismaService.isConnected) {
       return [];
-    } else {
-      const sim = this.prismaService.simulator.getOrCreateUser(email);
-      return this.prismaService.simulator.activityLogs;
     }
+    const user = await this.prismaService.client.user.findUnique({ where: { email } });
+    if (!user) return [];
+    return await this.prismaService.client.activityLog.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      take: 50
+    });
   }
 
   // App Marketplace
@@ -910,24 +909,36 @@ export class EnterpriseController {
   }
 
   @Get('admin/tenants')
-  getTenants() {
-    if (this.prismaService.isConnected) {
+  async getTenants() {
+    if (!this.prismaService.isConnected) {
       return [];
-    } else {
-      return this.prismaService.simulator.organizations.map(org => {
-        const users = this.prismaService.simulator.users.filter(u => u.organizationId === org.id);
-        const clients = this.prismaService.simulator.getClients(org.id);
-        return {
-          id: org.id,
-          name: org.name,
-          email: users[0]?.email || 'client@Revenuepilot.com',
-          plan: org.plan,
-          status: 'Active',
-          mrr: org.plan === 'starter' ? 999 : org.plan === 'Revenue' ? 1999 : 4999,
-          clientsConnected: clients.length
-        };
-      });
     }
+    const orgs = await this.prismaService.client.organization.findMany({
+      include: {
+        users: true,
+        clients: true,
+        subscriptions: true
+      }
+    });
+    return orgs.map(org => {
+      const plan = org.subscriptions[0]?.tier?.toLowerCase() || 'starter';
+      const priceMap: Record<string, number> = {
+        starter: 999,
+        growth: 1999,
+        professional: 2999,
+        agency: 4999,
+        enterprise: 15000
+      };
+      return {
+        id: org.id,
+        name: org.name,
+        email: org.users[0]?.email || 'noreply@revenuepilot.com',
+        plan: plan,
+        status: 'Active',
+        mrr: priceMap[plan] || 999,
+        clientsConnected: org.clients.length
+      };
+    });
   }
 
   // My Profile - Account Management Center
@@ -983,35 +994,29 @@ export class EnterpriseController {
         },
         loginHistory: user.loginHistory || []
       };
-    } else {
-      return this.prismaService.simulator.getUserProfile(email);
     }
+    return null;
   }
 
   @Patch('user/profile')
   async updateUserProfile(@Req() req: Request, @Body() body: any) {
     const email = this.getUserEmail(req);
-    if (this.prismaService.isConnected) {
-      const user = await this.prismaService.client.user.findUnique({ where: { email } });
-      if (!user) return { success: false };
-      const updated = await this.prismaService.client.user.update({
-        where: { id: user.id },
-        data: {
-          firstName: body.firstName,
-          lastName: body.lastName,
-          phone: body.phone,
-          jobTitle: body.jobTitle,
-          websiteUrl: body.websiteUrl,
-          country: body.country,
-          timezone: body.timezone,
-          name: body.name
-        }
-      });
-      return { success: true, user: updated };
-    } else {
-      const updated = this.prismaService.simulator.updateUserProfile(email, body);
-      return { success: !!updated, user: updated };
-    }
+    const user = await this.prismaService.client.user.findUnique({ where: { email } });
+    if (!user) return { success: false };
+    const updated = await this.prismaService.client.user.update({
+      where: { id: user.id },
+      data: {
+        firstName: body.firstName,
+        lastName: body.lastName,
+        phone: body.phone,
+        jobTitle: body.jobTitle,
+        websiteUrl: body.websiteUrl,
+        country: body.country,
+        timezone: body.timezone,
+        name: body.name
+      }
+    });
+    return { success: true, user: updated };
   }
 
   @Post('user/profile/avatar')
@@ -1035,34 +1040,24 @@ export class EnterpriseController {
       }
     }
 
-    if (this.prismaService.isConnected) {
-      await this.prismaService.client.user.update({
-        where: { email },
-        data: { avatarUrl: finalUrl }
-      });
-      return { success: true, avatarUrl: finalUrl };
-    } else {
-      const ok = this.prismaService.simulator.updateAvatar(email, finalUrl);
-      return { success: ok, avatarUrl: finalUrl };
-    }
+    await this.prismaService.client.user.update({
+      where: { email },
+      data: { avatarUrl: finalUrl }
+    });
+    return { success: true, avatarUrl: finalUrl };
   }
 
   @Delete('user/profile/avatar')
   async removeAvatar(@Req() req: Request) {
     const email = this.getUserEmail(req);
     const defaultAvatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80";
-    if (this.prismaService.isConnected) {
-      const user = await this.prismaService.client.user.findUnique({ where: { email } });
-      if (!user) return { success: false };
-      await this.prismaService.client.user.update({
-        where: { id: user.id },
-        data: { avatarUrl: defaultAvatar }
-      });
-      return { success: true, avatarUrl: defaultAvatar };
-    } else {
-      const ok = this.prismaService.simulator.updateAvatar(email, defaultAvatar);
-      return { success: ok, avatarUrl: defaultAvatar };
-    }
+    const user = await this.prismaService.client.user.findUnique({ where: { email } });
+    if (!user) return { success: false };
+    await this.prismaService.client.user.update({
+      where: { id: user.id },
+      data: { avatarUrl: defaultAvatar }
+    });
+    return { success: true, avatarUrl: defaultAvatar };
   }
 
   @Post('user/profile/password')
@@ -1073,42 +1068,24 @@ export class EnterpriseController {
       return { success: false, message: "Password does not meet strength requirements (must be at least 8 chars, containing uppercase, lowercase, and numeric digits)." };
     }
 
-    if (this.prismaService.isConnected) {
-      const user = await this.prismaService.client.user.findUnique({ where: { email } });
-      if (!user) return { success: false, message: "User not found." };
-      if (user.passwordHash && user.passwordHash !== body.currentPassword) {
-        return { success: false, message: "Current password does not match." };
-      }
-      await this.prismaService.client.user.update({
-        where: { id: user.id },
-        data: { passwordHash: body.newPassword }
-      });
-      await this.prismaService.client.auditLog.create({
-        data: {
-          userId: user.id,
-          action: "Password Changed",
-          resource: "UserCredentials",
-          details: "User updated account credentials"
-        }
-      });
-      return { success: true };
-    } else {
-      const user = this.prismaService.simulator.getUserProfile(email);
-      if (!user) return { success: false, message: "User not found." };
-      if (user.passwordHash && user.passwordHash !== body.currentPassword) {
-        return { success: false, message: "Current password does not match." };
-      }
-      this.prismaService.simulator.changePassword(email, body.newPassword);
-      this.prismaService.simulator.activityLogs.unshift({
-        id: `log_${Date.now()}`,
-        user: user.name,
-        action: "Password Changed",
-        details: "User credentials changed successfully.",
-        timestamp: "Just now",
-        organizationId: user.organizationId
-      });
-      return { success: true };
+    const user = await this.prismaService.client.user.findUnique({ where: { email } });
+    if (!user) return { success: false, message: "User not found." };
+    if (user.passwordHash && user.passwordHash !== body.currentPassword) {
+      return { success: false, message: "Current password does not match." };
     }
+    await this.prismaService.client.user.update({
+      where: { id: user.id },
+      data: { passwordHash: body.newPassword }
+    });
+    await this.prismaService.client.auditLog.create({
+      data: {
+        userId: user.id,
+        action: "Password Changed",
+        resource: "UserCredentials",
+        details: "User updated account credentials"
+      }
+    });
+    return { success: true };
   }
 
   @Post('user/profile/2fa/setup')
@@ -1130,118 +1107,83 @@ export class EnterpriseController {
     );
     const recoveryCodes = recoveryCodesList.join(", ");
 
-    if (this.prismaService.isConnected) {
-      const user = await this.prismaService.client.user.findUnique({ where: { email } });
-      if (!user) return { success: false };
-      await this.prismaService.client.user.update({
-        where: { id: user.id },
-        data: {
-          twoFactorEnabled: true,
-          twoFactorSecret: body.secret,
-          twoFactorRecoveryCodes: recoveryCodes
-        }
-      });
-      return { success: true, recoveryCodes: recoveryCodesList };
-    } else {
-      const ok = this.prismaService.simulator.enable2Fa(email, body.secret, recoveryCodes);
-      return { success: ok, recoveryCodes: recoveryCodesList };
-    }
+    const user = await this.prismaService.client.user.findUnique({ where: { email } });
+    if (!user) return { success: false };
+    await this.prismaService.client.user.update({
+      where: { id: user.id },
+      data: {
+        twoFactorEnabled: true,
+        twoFactorSecret: body.secret,
+        twoFactorRecoveryCodes: recoveryCodes
+      }
+    });
+    return { success: true, recoveryCodes: recoveryCodesList };
   }
 
   @Post('user/profile/2fa/disable')
   async disable2Fa(@Req() req: Request) {
     const email = this.getUserEmail(req);
-    if (this.prismaService.isConnected) {
-      const user = await this.prismaService.client.user.findUnique({ where: { email } });
-      if (!user) return { success: false };
-      await this.prismaService.client.user.update({
-        where: { id: user.id },
-        data: {
-          twoFactorEnabled: false,
-          twoFactorSecret: "",
-          twoFactorRecoveryCodes: ""
-        }
-      });
-      return { success: true };
-    } else {
-      const ok = this.prismaService.simulator.disable2Fa(email);
-      return { success: ok };
-    }
+    const user = await this.prismaService.client.user.findUnique({ where: { email } });
+    if (!user) return { success: false };
+    await this.prismaService.client.user.update({
+      where: { id: user.id },
+      data: {
+        twoFactorEnabled: false,
+        twoFactorSecret: "",
+        twoFactorRecoveryCodes: ""
+      }
+    });
+    return { success: true };
   }
 
   @Post('user/login-history/terminate')
   async terminateOtherSessions(@Req() req: Request) {
     const email = this.getUserEmail(req);
-    if (this.prismaService.isConnected) {
-      const user = await this.prismaService.client.user.findUnique({ where: { email } });
-      if (!user) return { success: false };
-      const history = await this.prismaService.client.loginHistory.findMany({
-        where: { userId: user.id },
-        orderBy: { loginTime: 'desc' }
+    const user = await this.prismaService.client.user.findUnique({ where: { email } });
+    if (!user) return { success: false };
+    const history = await this.prismaService.client.loginHistory.findMany({
+      where: { userId: user.id },
+      orderBy: { loginTime: 'desc' }
+    });
+    if (history.length > 1) {
+      const keepId = history[0].id;
+      await this.prismaService.client.loginHistory.deleteMany({
+        where: { userId: user.id, NOT: { id: keepId } }
       });
-      if (history.length > 1) {
-        const keepId = history[0].id;
-        await this.prismaService.client.loginHistory.deleteMany({
-          where: { userId: user.id, NOT: { id: keepId } }
-        });
-      }
-      return { success: true };
-    } else {
-      const user = this.prismaService.simulator.getUserProfile(email);
-      if (!user) return { success: false };
-      const ok = this.prismaService.simulator.terminateOtherSessions(user.id);
-      return { success: ok };
     }
+    return { success: true };
   }
 
   @Patch('user/preferences')
   async updatePreferences(@Req() req: Request, @Body() body: any) {
     const email = this.getUserEmail(req);
-    if (this.prismaService.isConnected) {
-      const user = await this.prismaService.client.user.findUnique({ where: { email } });
-      if (!user) return { success: false };
-      const updated = await this.prismaService.client.userPreference.upsert({
-        where: { userId: user.id },
-        create: {
-          userId: user.id,
-          ...body
-        },
-        update: body
-      });
-      return { success: true, preferences: updated };
-    } else {
-      const user = this.prismaService.simulator.getUserProfile(email);
-      if (!user) return { success: false };
-      const updated = this.prismaService.simulator.updatePreferences(user.id, body);
-      return { success: !!updated, preferences: updated };
-    }
+    const user = await this.prismaService.client.user.findUnique({ where: { email } });
+    if (!user) return { success: false };
+    const updated = await this.prismaService.client.userPreference.upsert({
+      where: { userId: user.id },
+      create: {
+        userId: user.id,
+        ...body
+      },
+      update: body
+    });
+    return { success: true, preferences: updated };
   }
 
   @Get('user/api-keys')
   async getApiKeys(@Req() req: Request) {
     const email = this.getUserEmail(req);
-    if (this.prismaService.isConnected) {
-      const user = await this.prismaService.client.user.findUnique({ where: { email } });
-      if (!user) return [];
-      const keys = await this.prismaService.client.apiToken.findMany({
-        where: { organizationId: user.organizationId }
-      });
-      return keys.map(k => ({
-        id: k.id,
-        name: k.name,
-        token: `sk_live_...${k.token.slice(-4)}`,
-        createdAt: k.createdAt
-      }));
-    } else {
-      const sim = this.prismaService.simulator.getOrCreateUser(email);
-      const keys = this.prismaService.simulator.getApiKeys(sim.org.id);
-      return keys.map(k => ({
-        id: k.id,
-        name: k.name,
-        token: `sk_live_...${k.token.slice(-4)}`,
-        createdAt: k.createdAt
-      }));
-    }
+    const user = await this.prismaService.client.user.findUnique({ where: { email } });
+    if (!user) return [];
+    const keys = await this.prismaService.client.apiToken.findMany({
+      where: { organizationId: user.organizationId }
+    });
+    return keys.map(k => ({
+      id: k.id,
+      name: k.name,
+      token: `sk_live_...${k.token.slice(-4)}`,
+      createdAt: k.createdAt
+    }));
   }
 
   @Post('user/api-keys')
@@ -1249,48 +1191,33 @@ export class EnterpriseController {
     const email = this.getUserEmail(req);
     const rawKey = "sk_live_" + Math.random().toString(36).substring(2, 18) + Math.random().toString(36).substring(2, 18);
     
-    if (this.prismaService.isConnected) {
-      const user = await this.prismaService.client.user.findUnique({ where: { email } });
-      if (!user) return { success: false };
-      const key = await this.prismaService.client.apiToken.create({
-        data: {
-          organizationId: user.organizationId,
-          name: body.name,
-          token: rawKey
-        }
-      });
-      return { success: true, key: { id: key.id, name: key.name, token: rawKey, createdAt: key.createdAt } };
-    } else {
-      const sim = this.prismaService.simulator.getOrCreateUser(email);
-      const key = this.prismaService.simulator.createApiKey(sim.org.id, body.name, rawKey);
-      return { success: true, key };
-    }
+    const user = await this.prismaService.client.user.findUnique({ where: { email } });
+    if (!user) return { success: false };
+    const key = await this.prismaService.client.apiToken.create({
+      data: {
+        organizationId: user.organizationId,
+        name: body.name,
+        token: rawKey
+      }
+    });
+    return { success: true, key: { id: key.id, name: key.name, token: rawKey, createdAt: key.createdAt } };
   }
 
   @Delete('user/api-keys/:id')
   async revokeApiKey(@Param('id') id: string) {
-    if (this.prismaService.isConnected) {
-      await this.prismaService.client.apiToken.delete({ where: { id } });
-      return { success: true };
-    } else {
-      const ok = this.prismaService.simulator.revokeApiKey(id);
-      return { success: ok };
-    }
+    await this.prismaService.client.apiToken.delete({ where: { id } });
+    return { success: true };
   }
 
   @Get('user/export-data')
   async exportData(@Req() req: Request) {
     const email = this.getUserEmail(req);
     let dump: any;
-    if (this.prismaService.isConnected) {
-      const user = await this.prismaService.client.user.findUnique({
-        where: { email },
-        include: { preferences: true, loginHistory: true, activityLogs: true, organization: { include: { clients: true } } }
-      });
-      dump = user;
-    } else {
-      dump = this.prismaService.simulator.getUserProfile(email);
-    }
+    const user = await this.prismaService.client.user.findUnique({
+      where: { email },
+      include: { preferences: true, loginHistory: true, activityLogs: true, organization: { include: { clients: true } } }
+    });
+    dump = user;
     return {
       appName: "RevenuePilot",
       exportDate: new Date().toISOString(),
@@ -1316,14 +1243,6 @@ export class EnterpriseController {
         where: { id: user.organizationId }
       });
       return { success: true };
-    } else {
-      const user = this.prismaService.simulator.getUserProfile(email);
-      if (!user) return { success: false, message: "User not found." };
-      if (user.passwordHash && user.passwordHash !== body.passwordConfirm) {
-        return { success: false, message: "Password verification failed." };
-      }
-      const ok = this.prismaService.simulator.deleteUser(email);
-      return { success: ok };
     }
   }
 
@@ -1371,19 +1290,6 @@ export class EnterpriseController {
       });
 
       return { success: true, report: updatedReport };
-    } else {
-      const sim = this.prismaService.simulator.getOrCreateUser(email);
-      const mockId = `rep_${crypto.randomBytes(8).toString('hex')}`;
-      const report = {
-        id: mockId,
-        clientId: body.clientId || 'client_1',
-        name: reportName,
-        schedule: 'ON_DEMAND',
-        url: `/api/reports/download/${mockId}`,
-        createdAt: new Date()
-      };
-      this.mockReports.set(mockId, { ...report, orgId: sim.org.id });
-      return { success: true, report };
     }
   }
 
@@ -1391,6 +1297,9 @@ export class EnterpriseController {
   @Header('Content-Type', 'text/plain')
   @Header('Content-Disposition', 'attachment; filename="revenue_report.txt"')
   async downloadReport(@Req() req: Request, @Param('id') id: string) {
+    if (!this.prismaService.isConnected) {
+      throw new BadRequestException('Database unavailable. Please try again later.');
+    }
     const email = this.getUserEmail(req);
     let organizationName = '';
     let isEnterprise = false;
@@ -1410,15 +1319,6 @@ export class EnterpriseController {
       const report = await this.prismaService.client.report.findUnique({
         where: { id }
       });
-      if (report) {
-        reportName = report.name;
-      }
-    } else {
-      const sim = this.prismaService.simulator.getOrCreateUser(email);
-      organizationName = sim.org.name || `${sim.user.name}'s Workspace`;
-      isEnterprise = sim.org.plan.toUpperCase() === 'ENTERPRISE';
-      
-      const report = this.mockReports.get(id);
       if (report) {
         reportName = report.name;
       }
@@ -1450,17 +1350,13 @@ export class EnterpriseController {
   // Admin Command Impersonation Context endpoints
   @Post('admin/impersonate/start')
   async impersonateStart(@Req() req: Request, @Body() body: { email: string }) {
-    const requesterEmail = (req.headers['x-user-email'] as string) || 'arjun@Revenuepilot.com';
-    let requesterUser: any;
-
-    if (this.prismaService.isConnected) {
-      requesterUser = await this.prismaService.client.user.findUnique({
-        where: { email: requesterEmail }
-      });
-    } else {
-      const sim = this.prismaService.simulator.getOrCreateUser(requesterEmail);
-      requesterUser = sim.user;
+    if (!this.prismaService.isConnected) {
+      throw new BadRequestException('Database unavailable. Please try again later.');
     }
+    const requesterEmail = (req.headers['x-user-email'] as string) || 'arjun@Revenuepilot.com';
+    const requesterUser = await this.prismaService.client.user.findUnique({
+      where: { email: requesterEmail }
+    });
 
     if (!requesterUser || requesterUser.role !== 'ADMIN') {
       throw new UnauthorizedException('Only administrators can start impersonation.');
@@ -1474,9 +1370,6 @@ export class EnterpriseController {
         where: { email: targetEmail }
       });
       targetUserExists = !!targetUser;
-    } else {
-      const sim = this.prismaService.simulator.getUserProfile(targetEmail);
-      targetUserExists = !!sim;
     }
 
     if (!targetUserExists) {

@@ -378,6 +378,11 @@ export default function ProfilePage() {
     { id: "sessions", label: "Session Control", icon: <Monitor size={16} /> }
   ];
 
+    const getDisplayName = (email: string) => {
+    const localPart = email.split("@")[0];
+    return localPart.charAt(0).toUpperCase() + localPart.slice(1);
+  };
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-16 font-sans">
       
@@ -385,11 +390,10 @@ export default function ProfilePage() {
       <div className="bg-white dark:bg-[#0D121F] border border-gray-200/80 dark:border-[#1B2438] rounded-3xl p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-5 flex-col md:flex-row text-center md:text-left">
           <div className="relative group">
-            <img
-              src={profile.avatarUrl || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80"}
-              alt={profile.email}
-              className="w-20 h-20 rounded-full object-cover border-2 border-emerald-500 shadow-lg"
-            />
+          
+            <div className="flex items-center justify-center w-20 h-20 rounded-full object-cover border-2 border-emerald-500 shadow-lg">
+                <h1 style={{"fontSize":"2rem"}}>{getDisplayName(profile.email).charAt(0)}</h1>
+              </div>
             <label className="absolute bottom-0 right-0 w-7 h-7 bg-emerald-500 hover:bg-emerald-600 rounded-full flex items-center justify-center text-white cursor-pointer shadow-md shadow-emerald-500/10">
               <Upload size={14} />
               <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />

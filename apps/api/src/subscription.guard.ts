@@ -9,38 +9,33 @@ export class SubscriptionGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     let userEmail = request.headers['x-user-email'] || 'arjun@Revenuepilot.com';
-    
+
+    if (!this.prismaService.isConnected) {
+      throw new HttpException({
+        statusCode: HttpStatus.SERVICE_UNAVAILABLE,
+        error: 'Database unavailable',
+        message: 'Service is currently unavailable because the database connection could not be established.'
+      }, HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
+    const headerPlan = request.headers['x-selected-plan'];
+    let planKey = 'starter';
+    let orgId = '';
+
     // Resolve impersonation context for ADMIN roles
     const impersonateHeader = request.headers['x-impersonate-user'];
     if (impersonateHeader) {
-      let requesterIsAdmin = false;
-      if (this.prismaService.isConnected) {
-        const requester = await this.prismaService.client.user.findUnique({
-          where: { email: userEmail }
-        });
-        if (requester && requester.role === 'ADMIN') {
-          requesterIsAdmin = true;
-        }
-      } else {
-        const sim = this.prismaService.simulator.getOrCreateUser(userEmail);
-        if (sim.user.role === 'ADMIN') {
-          requesterIsAdmin = true;
-        }
-      }
-
-      if (requesterIsAdmin) {
+      const requester = await this.safeDbQuery(() =>
+        this.prismaService.client.user.findUnique({ where: { email: userEmail } })
+      );
+      if (requester && requester.role === 'ADMIN') {
         request['impersonatedUserEmail'] = impersonateHeader;
         userEmail = impersonateHeader;
       }
     }
 
-    // Fallback overrides for visual tests if header is passed
-    const headerPlan = request.headers['x-selected-plan'];
-    let planKey = 'starter';
-    let orgId = '';
-
-    if (this.prismaService.isConnected) {
-      const user = await this.prismaService.client.user.findUnique({
+    const user = await this.safeDbQuery(() =>
+      this.prismaService.client.user.findUnique({
         where: { email: userEmail },
         include: {
           organization: {
@@ -49,16 +44,11 @@ export class SubscriptionGuard implements CanActivate {
             }
           }
         }
-      });
-      if (user) {
-        orgId = user.organizationId;
-        planKey = (user.organization.subscriptions[0]?.tier || 'STARTER').toLowerCase();
-      }
-    } else {
-      // Connect to Simulator
-      const sim = this.prismaService.simulator.getOrCreateUser(userEmail);
-      orgId = sim.org.id;
-      planKey = sim.org.plan.toLowerCase();
+      })
+    );
+    if (user) {
+      orgId = user.organizationId;
+      planKey = (user.organization.subscriptions[0]?.tier || 'STARTER').toLowerCase();
     }
 
     // Allow testing overrides if explicitly set in headers
@@ -75,25 +65,29 @@ export class SubscriptionGuard implements CanActivate {
 
     const planLimits = limits[planKey] || limits.starter;
 
-    // Resolve usage dynamics from database/simulator
+    // Resolve usage metrics from database
     const currentUsage = { campaigns: 0, workspaces: 0, team: 0, clients: 0 };
 
-    if (this.prismaService.isConnected) {
-      currentUsage.campaigns = await this.prismaService.client.campaign.count({
+    currentUsage.campaigns = await this.safeDbQuery(() =>
+      this.prismaService.client.campaign.count({
         where: { adAccount: { client: { organizationId: orgId } } }
-      });
-      currentUsage.workspaces = await this.prismaService.client.client.count({ // workspaces equivalent
+      })
+    );
+    currentUsage.workspaces = await this.safeDbQuery(() =>
+      this.prismaService.client.client.count({
         where: { organizationId: orgId }
-      });
-      currentUsage.team = await this.prismaService.client.user.count({
+      })
+    );
+    currentUsage.team = await this.safeDbQuery(() =>
+      this.prismaService.client.user.count({
         where: { organizationId: orgId }
-      });
-    } else {
-      currentUsage.campaigns = this.prismaService.simulator.getCampaigns(orgId).length;
-      currentUsage.workspaces = this.prismaService.simulator.getWorkspaces(orgId).length;
-      currentUsage.team = this.prismaService.simulator.users.filter(u => u.organizationId === orgId).length;
-      currentUsage.clients = this.prismaService.simulator.getClients(orgId).length;
-    }
+      })
+    );
+    currentUsage.clients = await this.safeDbQuery(() =>
+      this.prismaService.client.client.count({
+        where: { organizationId: orgId }
+      })
+    );
 
     const path = request.url;
     const method = request.method;
@@ -134,5 +128,19 @@ export class SubscriptionGuard implements CanActivate {
     }
 
     return true;
+  }
+
+  private async safeDbQuery<T>(fn: () => Promise<T>): Promise<T> {
+    try {
+      return await fn();
+    } catch (error: any) {
+      this.logger.error('Prisma database query failed in SubscriptionGuard', error?.message || error);
+      this.prismaService.isConnected = false;
+      throw new HttpException({
+        statusCode: HttpStatus.SERVICE_UNAVAILABLE,
+        error: 'Database unavailable',
+        message: 'Service is currently unavailable because the database connection could not be established.'
+      }, HttpStatus.SERVICE_UNAVAILABLE);
+    }
   }
 }

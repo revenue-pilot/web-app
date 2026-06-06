@@ -201,8 +201,7 @@ export class BillingService {
         }
       }
     } else {
-      const sim = this.prisma.simulator.getOrCreateUser(email);
-      this.prisma.simulator.upgradePlan(sim.org.id, planName.toLowerCase() as any, 1999);
+      throw new Error('Database unavailable. Cannot upgrade subscription without a live database.');
     }
   }
 }

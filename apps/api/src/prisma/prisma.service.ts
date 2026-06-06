@@ -1,13 +1,11 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { prisma } from 'database';
-import { mockDb } from './mock-db';
 
 @Injectable()
 export class PrismaService implements OnModuleInit {
   private readonly logger = new Logger(PrismaService.name);
   public readonly client = prisma;
   public isConnected = false;
-  public readonly simulator = mockDb;
 
   async onModuleInit() {
     const maxRetries = 5;
@@ -25,7 +23,7 @@ export class PrismaService implements OnModuleInit {
         this.logger.warn(`Prisma Connection attempt ${attempt} failed. error: ${e.message}`);
         
         if (attempt === maxRetries) {
-          this.logger.error('All Prisma DB connection attempts failed. Running in mock-adapted mode.');
+          this.logger.error('All Prisma DB connection attempts failed. Database-dependent routes will return service unavailable.');
           return;
         }
 

@@ -317,7 +317,7 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
         this.logger.error('Failed to write AI usage audit log dynamically', e);
       }
     } else {
-      this.logger.log(`[Simulator AI Log] User: ${email} | Action: ${action} | Tokens: ${tokens} | Cost: $${cost}`);
+      this.logger.log(`Database unavailable; AI usage audit log skipped for user ${email}. Action: ${action}, tokens: ${tokens}, cost: $${cost}`);
     }
   }
 }

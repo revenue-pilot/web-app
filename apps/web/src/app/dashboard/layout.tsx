@@ -288,11 +288,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             {/* User Profile */}
             <div className="flex items-center gap-3">
-              <img
-                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80"
-                alt={userEmail}
-                className="w-9 h-9 rounded-full object-cover border border-gray-200 dark:border-[#1B2438] shadow-sm"
-              />
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 text-white font-semibold flex items-center justify-center border border-gray-200 dark:border-[#1B2438] shadow-sm">
+                {getDisplayName(userEmail).charAt(0)}
+              </div>
               <div className="hidden lg:block text-left">
                 <p className="text-sm font-semibold text-gray-900 dark:text-white leading-tight">{getDisplayName(userEmail)}</p>
                 <p className="text-xs text-gray-400 leading-none mt-0.5">{userRole}</p>
