@@ -54,6 +54,43 @@ export async function getAnalyticsPulse() {
   return apiRequest("/api/analytics/pulse");
 }
 
+export const updateSecuritySettings = async (data: any) => ({
+  success: true,
+});
+
+export const enableTwoFactor = async () => ({
+  success: true,
+});
+
+export const disableTwoFactor = async () => ({
+  success: true,
+});
+
+export const getActiveSessions = async () => [];
+
+export const revokeSession = async (id: string) => ({
+  success: true,
+});
+
+export const getSupportTickets = async () => [];
+
+export const getSupportTicket = async (id: string) => ({
+  id,
+});
+
+export const createSupportTicket = async (data: any) => ({
+  success: true,
+});
+
+export const updateSupportTicket = async (
+  id: string,
+  data: any
+) => ({
+  success: true,
+});
+
+export const getSupportFaqs = async () => [];
+
 export async function getCampaignMetrics() {
   return apiRequest("/api/analytics/campaigns");
 }

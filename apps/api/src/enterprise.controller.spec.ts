@@ -138,7 +138,7 @@ describe('EnterpriseController', () => {
   });
 
   describe('getPulseAnalytics', () => {
-    it('should return pulse matrix data', () => {
+    it('should return pulse matrix data', async () => {
       const result = await controller.getPulseAnalytics(mockRequest);
       expect(result).toHaveProperty('attribution');
       expect(result).toHaveProperty('funnel');
