@@ -418,27 +418,143 @@ export class EnterpriseController {
 
   // Analytics (Pulse Matrix & Insight Engine)
   @Get('analytics/pulse')
-  getPulseAnalytics() {
+  async getPulseAnalytics(@Req() req: Request) {
+    const email = this.getUserEmail(req);
+
+    if (!this.prismaService.isConnected) {
+      return {
+        summary: null,
+        chartData: [],
+        platformSpend: [],
+        campaignStatus: [],
+        totalCampaigns: 0,
+        lastUpdated: null
+      };
+    }
+
+    const user = await this.prismaService.client.user.findUnique({
+      where: { email },
+      include: {
+        organization: true
+      }
+    });
+
+    if (!user) {
+      return {
+        summary: null,
+        chartData: [],
+        platformSpend: [],
+        campaignStatus: [],
+        totalCampaigns: 0,
+        lastUpdated: null
+      };
+    }
+
+    const campaigns = await this.prismaService.client.campaign.findMany({
+      where: {
+        adAccount: {
+          client: {
+            organizationId: user.organizationId
+          }
+        }
+      },
+      include: {
+        adAccount: true,
+        metrics: {
+          orderBy: {
+            date: 'asc'
+          }
+        }
+      }
+    });
+
+    const platformSpendMap: Record<string, number> = {};
+    const campaignStatusMap: Record<string, number> = { Active: 0, Paused: 0, Draft: 0, Ended: 0 };
+    const chartMap = new Map<string, { name: string; Spend: number; Revenue: number; Conversions: number }>();
+
+    let totalSpend = 0;
+    let totalRevenue = 0;
+    let totalConversions = 0;
+    let lastUpdated: string | null = null;
+
+    campaigns.forEach((campaign) => {
+      const platform = campaign.adAccount.platform === 'GOOGLE_ADS' ? 'Google Ads' : campaign.adAccount.platform === 'META_ADS' ? 'Meta Ads' : 'Others';
+      const status = campaign.status === 'ACTIVE' ? 'Active' : campaign.status === 'PAUSED' ? 'Paused' : campaign.status === 'REMOVED' ? 'Ended' : 'Draft';
+      campaignStatusMap[status] = (campaignStatusMap[status] || 0) + 1;
+
+      let campaignSpend = 0;
+      let campaignRevenue = 0;
+      let campaignConversions = 0;
+
+      campaign.metrics.forEach((metric) => {
+        const spend = Number(metric.spend || 0);
+        const conversions = Number(metric.conversions || 0);
+        const revenue = spend * Number(metric.roas || 0);
+        const dayKey = metric.date.toISOString().slice(0, 10);
+        const existing = chartMap.get(dayKey) || { name: dayKey, Spend: 0, Revenue: 0, Conversions: 0 };
+
+        existing.Spend += spend;
+        existing.Revenue += revenue;
+        existing.Conversions += conversions;
+        chartMap.set(dayKey, existing);
+
+        campaignSpend += spend;
+        campaignRevenue += revenue;
+        campaignConversions += conversions;
+
+        if (!lastUpdated || metric.date.toISOString() > lastUpdated) {
+          lastUpdated = metric.date.toISOString();
+        }
+      });
+
+      platformSpendMap[platform] = (platformSpendMap[platform] || 0) + campaignSpend;
+      totalSpend += campaignSpend;
+      totalRevenue += campaignRevenue;
+      totalConversions += campaignConversions;
+    });
+
+    const platformSpend = Object.entries(platformSpendMap).map(([name, value]) => ({
+      name,
+      value,
+      percent: totalSpend > 0 ? `${Math.round((value / totalSpend) * 100)}%` : '0%'
+    }));
+
+    const campaignStatus = Object.entries(campaignStatusMap)
+      .filter(([, value]) => value > 0)
+      .map(([name, value]) => ({
+        name,
+        value,
+        percent: campaigns.length > 0 ? `${Math.round((value / campaigns.length) * 100)}%` : '0%'
+      }));
+
+    const chartData = Array.from(chartMap.values())
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((entry) => ({
+        name: entry.name,
+        Spend: Math.round(entry.Spend),
+        Revenue: Math.round(entry.Revenue),
+        Conversions: Math.round(entry.Conversions)
+      }));
+
     return {
-      attribution: [
-        { model: 'First Click', googlePct: 40, metaPct: 50, otherPct: 10 },
-        { model: 'Last Click', googlePct: 62, metaPct: 30, otherPct: 8 },
-        { model: 'Linear', googlePct: 50, metaPct: 40, otherPct: 10 },
-        { model: 'Time Decay', googlePct: 55, metaPct: 37, otherPct: 8 }
-      ],
-      funnel: [
-        { name: 'Impressions', google: 0, meta: 0, other: 0 },
-        { name: 'Clicks', google: 0, meta: 0, other: 0 },
-        { name: 'Leads', google: 0, meta: 0, other: 0 },
-        { name: 'Sales', google: 0, meta: 0, other: 0 }
-      ],
-      cohorts: []
+      summary: {
+        spend: Math.round(totalSpend),
+        revenue: Math.round(totalRevenue),
+        conversions: Math.round(totalConversions),
+        roas: totalSpend > 0 ? Number((totalRevenue / totalSpend).toFixed(2)) : 0
+      },
+      chartData,
+      platformSpend,
+      campaignStatus,
+      totalCampaigns: campaigns.length,
+      lastUpdated
     };
   }
 
   // Billing (Revenue Command)
   @Get('billing/subscriptions')
   async getBillingInfo(@Req() req: Request) {
+    try {
     const email = this.getUserEmail(req);
     let plan = 'starter';
     let orgId = '';
@@ -495,6 +611,18 @@ export class EnterpriseController {
       nextBilling: 'Jul 19, 2026',
       invoices: this.prismaService.simulator.invoices
     };
+    } catch (e) {
+      this.logger.error('getBillingInfo error', e);
+      return {
+        plan: 'STARTER',
+        limits: { campaigns: 3, workspaces: 1, team: 1, storage: 5, adAccounts: 1, clients: 0 },
+        usage: { campaigns: 0, workspaces: 0, team: 0, storage: 0, adAccounts: 0, clients: 0 },
+        price: 999,
+        period: 'month',
+        nextBilling: null,
+        invoices: []
+      };
+    }
   }
 
   @Post('billing/checkout')

@@ -39,16 +39,6 @@ const planLimitsMap: Record<PlanTier, PlanLimits> = {
   enterprise: { campaigns: 9999, workspaces: 9999, team: 9999, storage: 9999, adAccounts: 9999, clients: 9999 }
 };
 
-// Mock current usage state (simulate starting values)
-const mockUsage: Usage = {
-  campaigns: 3,   // 3 campaigns created (Starter: 100%, Revenue: 20%)
-  workspaces: 1,  // 1 workspace created (Starter: 100%, Revenue: 33%)
-  team: 2,        // 2 members (Starter: 200%, Revenue: 66%)
-  storage: 1.2,   // 1.2GB used (Starter: 24%)
-  adAccounts: 1,  // 1 ad account (Starter: 100%)
-  clients: 4      // 4 client accounts (Visible only on Enterprise)
-};
-
 const SubscriptionContext = createContext<SubscriptionContextProps | undefined>(undefined);
 
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {

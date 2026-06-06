@@ -1,22 +1,23 @@
 // Centralized API client for all backend requests
-import { getSession } from "next-auth/react";
-
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 interface RequestOptions extends RequestInit {
   headers?: Record<string, string>;
 }
 
-// Helper to get auth token from session
-async function getAuthHeaders(): Promise<Record<string, string>> {
-  const session = await getSession();
+// Helper to get auth headers - retrieves user email from localStorage
+function getAuthHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json"
   };
 
-  if (session?.user?.email) {
-    // You may need to add a custom JWT token header if using JWT auth
-    // headers["Authorization"] = `Bearer ${session.accessToken}`;
+  // Get user email from localStorage (set during login)
+  const userEmail = typeof window !== 'undefined' 
+    ? localStorage.getItem("user_email") || "guest@revenuepilot.com"
+    : "guest@revenuepilot.com";
+
+  if (userEmail) {
+    headers["x-user-email"] = userEmail;
   }
 
   return headers;
@@ -28,7 +29,7 @@ export async function apiRequest(
   options: RequestOptions = {}
 ): Promise<any> {
   const url = `${API_BASE_URL}${endpoint}`;
-  const headers = await getAuthHeaders();
+  const headers = getAuthHeaders();
 
   const finalOptions: RequestOptions = {
     ...options,
@@ -296,69 +297,4 @@ export async function deleteAutomation(id: string) {
 // Security Settings
 export async function getSecuritySettings() {
   return apiRequest("/api/user/security");
-}
-
-export async function updateSecuritySettings(data: any) {
-  return apiRequest("/api/user/security", {
-    method: "PATCH",
-    body: JSON.stringify(data)
-  });
-}
-
-export async function enableTwoFactor() {
-  return apiRequest("/api/user/security/2fa/enable", {
-    method: "POST"
-  });
-}
-
-export async function disableTwoFactor() {
-  return apiRequest("/api/user/security/2fa/disable", {
-    method: "POST"
-  });
-}
-
-export async function getActiveSessions() {
-  return apiRequest("/api/user/security/sessions");
-}
-
-export async function revokeSession(sessionId: string) {
-  return apiRequest(`/api/user/security/sessions/${sessionId}`, {
-    method: "DELETE"
-  });
-}
-
-// Support Tickets
-export async function getSupportTickets() {
-  return apiRequest("/api/support/tickets");
-}
-
-export async function getSupportTicket(id: string) {
-  return apiRequest(`/api/support/tickets/${id}`);
-}
-
-export async function createSupportTicket(data: any) {
-  return apiRequest("/api/support/tickets", {
-    method: "POST",
-    body: JSON.stringify(data)
-  });
-}
-
-export async function updateSupportTicket(id: string, data: any) {
-  return apiRequest(`/api/support/tickets/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify(data)
-  });
-}
-
-export async function getSupportFaqs() {
-  return apiRequest("/api/support/faqs");
-}
-
-// Admin
-export async function getPlatformMetrics() {
-  return apiRequest("/api/admin/platform-metrics");
-}
-
-export async function getTenants() {
-  return apiRequest("/api/admin/tenants");
 }

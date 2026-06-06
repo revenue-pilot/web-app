@@ -9,10 +9,8 @@ export function Telemetry() {
     const sentryDsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
     if (sentryDsn) {
       console.log("[Telemetry] Initializing Sentry error tracker...");
-      // In production, we dynamically fetch/init Sentry to keep bundler lightweight
       window.addEventListener("error", (event) => {
         console.error("[Telemetry Captured Error]:", event.error || event.message);
-        // Telemetry payload dispatch
       });
     }
 
@@ -35,14 +33,16 @@ export function Telemetry() {
       (window as any).gtag("config", gaId);
     }
 
-    // 3. Initialize Microsoft Clarity
-    const clarityId = "mock-clarity-id"; // fallback clarity configuration
-    console.log("[Telemetry] Initializing Microsoft Clarity...");
-    (function (c: any, l: any, a: any, r: any, i: any, t?: any, y?: any) {
-      c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments) };
-      t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i;
-      y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
-    })(window, document, "clarity", "script", clarityId);
+    // 3. Initialize Microsoft Clarity — only when a real project ID is provided
+    const clarityId = process.env.NEXT_PUBLIC_CLARITY_ID;
+    if (clarityId) {
+      console.log(`[Telemetry] Initializing Microsoft Clarity (${clarityId})...`);
+      (function (c: any, l: any, a: any, r: any, i: any, t?: any, y?: any) {
+        c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments) };
+        t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i;
+        y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+      })(window, document, "clarity", "script", clarityId);
+    }
 
     // 4. Initialize PostHog
     const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
