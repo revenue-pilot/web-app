@@ -58,15 +58,14 @@ export default function PulseMatrixPage() {
           <div>
             <h3 className="font-bold text-gray-900 text-sm mb-3">Select Attribution Model</h3>
             <div className="grid grid-cols-2 gap-2">
-              {attributionModels.map((m) => (
+              {attributionModels.map((m: any) => (
                 <button
                   key={m.name}
                   onClick={() => setAttributionModel(m.name)}
-                  className={`py-2 px-3 text-xs font-semibold rounded-xl border text-center transition-all ${
-                    attributionModel === m.name
+                  className={`py-2 px-3 text-xs font-semibold rounded-xl border text-center transition-all ${attributionModel === m.name
                       ? "bg-emerald-50 text-emerald-600 border-emerald-200"
                       : "bg-white text-gray-500 hover:bg-gray-50 border-gray-200"
-                  }`}
+                    }`}
                 >
                   {m.name}
                 </button>
@@ -118,7 +117,7 @@ export default function PulseMatrixPage() {
               </tr>
             </thead>
             <tbody className="text-xs font-semibold text-gray-600">
-              {cohortData.map((row) => (
+              {cohortData.map((row: any) => (
                 <tr key={row.month} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                   <td className="py-4 text-left font-bold text-gray-800">{row.month}</td>
                   <td className="py-4 font-bold text-gray-500">{row.size}</td>
