@@ -346,7 +346,7 @@ export default function LoginPage() {
         </div>
 
         <p className="mt-6 text-center text-sm text-gray-600 font-medium">
-          Don't have an account? <a href="/signup" className="text-emerald-600 hover:text-emerald-700 font-bold hover:underline transition-colors">Sign up</a>
+          Don&apos;t have an account? <a href="/signup" className="text-emerald-600 hover:text-emerald-700 font-bold hover:underline transition-colors">Sign up</a>
         </p>
 
         <p className="mt-6 text-center text-xs text-gray-400 font-semibold leading-relaxed">
