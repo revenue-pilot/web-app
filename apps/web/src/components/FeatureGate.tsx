@@ -61,12 +61,16 @@ export function FeatureGate({
 
   const displayBenefits = benefits.length > 0 ? benefits : defaultBenefits[requiredPlan];
 
+  // Gate mockComponent behind development environment for security
+  const isDevelopment = typeof window !== 'undefined' && process.env.NODE_ENV === 'development';
+  const safeMockComponent = isDevelopment ? mockComponent : undefined;
+
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-12 relative">
       {/* Background Teaser Component (Blurred out) */}
       <div className="relative pointer-events-none select-none filter blur-[6px] opacity-25">
-        {mockComponent ? (
-          mockComponent
+        {safeMockComponent ? (
+          safeMockComponent
         ) : (
           <div className="bg-white dark:bg-[#0D121F] border border-gray-200 dark:border-[#1B2438] rounded-2xl p-8 space-y-6">
             <div className="h-8 bg-gray-200 dark:bg-zinc-800 rounded w-1/4 animate-pulse"></div>

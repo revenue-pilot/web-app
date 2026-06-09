@@ -1,16 +1,22 @@
-import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { QueueService } from '../jobs/queue.service';
 
 @Injectable()
-export class EmailService {
+export class EmailService implements OnModuleInit {
   private readonly logger = new Logger(EmailService.name);
   private readonly apiKey = process.env.RESEND_API_KEY;
   private readonly fromEmail = process.env.EMAIL_FROM || 'RevenuePilot <noreply@resend.dev>';
 
+  private queueService: QueueService;
+
   constructor(
-    @Inject(forwardRef(() => QueueService))
-    private queueService: QueueService,
+    private moduleRef: ModuleRef,
   ) {}
+
+  onModuleInit() {
+    this.queueService = this.moduleRef.get(QueueService, { strict: false });
+  }
 
   /**
    * High-level sendEmail queues the dispatch asynchronously.
@@ -117,9 +123,10 @@ export class EmailService {
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
         <h2 style="color: #10b981;">Log In to RevenuePilot</h2>
         <p>Click the button below to log in to your account instantly without a password. This link is valid for 15 minutes:</p>
-        <a href="${process.env.FRONTEND_URL}/login/verify?token=${token}" style="display: inline-block; background-color: #10b981; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 10px;">Log In Instantly</a>
+        <a href="${process.env.FRONTEND_URL}/login?token=${token}" style="display: inline-block; background-color: #10b981; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 10px;">Log In Instantly</a>
       </div>
     `;
     return this.sendEmail(to, subject, html);
   }
 }
+

@@ -11,6 +11,8 @@ export const metadata: Metadata = {
   description: "Enterprise SaaS for managing Google and Meta Ads.",
 };
 
+import { GoogleOAuthProvider } from '@react-oauth/google';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -19,10 +21,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} antialiased`}>
-        <Providers>
-          <Telemetry />
-          {children}
-        </Providers>
+        <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}>
+          <Providers>
+            <Telemetry />
+            {children}
+          </Providers>
+        </GoogleOAuthProvider>
       </body>
     </html>
   );

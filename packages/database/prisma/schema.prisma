@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,94 +8,108 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// -----------------------------------------------------------------------------
-// CORE TENANT & USER MANAGEMENT
-// -----------------------------------------------------------------------------
-
-enum Role {
-  ADMIN       // Platform Administrator (SaaS Owner)
-  AGENCY      // Agency Owner (White-label capabilities)
-  CLIENT      // End Client User
-}
-
 model Organization {
-  id              String         @id @default(uuid())
-  name            String
-  domain          String?        @unique
-  logoUrl         String?
-  brandColor      String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-
-  users           User[]
-  clients         Client[]
-  subscriptions   Subscription[]
-  apiTokens       ApiToken[]
-  whiteLabel      WhiteLabelConfig?
+  id                       String                     @id @default(uuid())
+  name                     String
+  domain                   String?                    @unique
+  logoUrl                  String?
+  brandColor               String?
+  industry                 String?
+  goals                    String[]
+  onboardingStep           Int                        @default(0)
+  isOnboarded              Boolean                    @default(false)
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
+  AiInsight                AiInsight[]
+  apiTokens                ApiToken[]
+  Attribution              Attribution[]
+  AuditLog                 AuditLog[]
+  AutomationExecution      AutomationExecution[]
+  AutomationRule           AutomationRule[]
+  Campaign                 Campaign[]
+  clients                  Client[]
+  contacts                 Contact[]
+  deals                    Deal[]
+  GoogleAdsConnector       GoogleAdsConnector[]
+  GoogleAnalyticsConnector GoogleAnalyticsConnector[]
+  IntegrationCredential    IntegrationCredential[]
+  leads                    Lead[]
+  marketplaceInstallations MarketplaceInstallation[]
+  MetaAdsConnector         MetaAdsConnector[]
+  Metric                   Metric[]
+  pipelines                Pipeline[]
+  reports                  Report[]
+  SearchConsoleConnector   SearchConsoleConnector[]
+  subscriptions            Subscription[]
+  SyncJob                  SyncJob[]
+  users                    User[]
+  Visitor                  Visitor[]
+  webhookEndpoints         WebhookEndpoint[]
+  whiteLabel               WhiteLabelConfig?
 }
 
 model User {
-  id                      String           @id @default(uuid())
-  email                   String           @unique
-  name                    String?
-  passwordHash            String?          // Nullable if using OAuth only
-  role                    Role             @default(CLIENT)
-  organizationId          String
-  createdAt               DateTime         @default(now())
-  updatedAt               DateTime         @updatedAt
-
-  // Profile Fields
-  firstName               String?
-  lastName                String?
-  phone                   String?
-  jobTitle                String?
-  websiteUrl              String?
-  country                 String?
-  timezone                String?
-  avatarUrl               String?
-
-  // Security Toggles
-  twoFactorEnabled        Boolean          @default(false)
-  twoFactorSecret         String?
-  twoFactorRecoveryCodes  String?
-
-  organization            Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  activityLogs            ActivityLog[]
-  auditLogs               AuditLog[]
-  preferences             UserPreference?
-  loginHistory            LoginHistory[]
+  id                     String          @id @default(uuid())
+  email                  String          @unique
+  name                   String?
+  passwordHash           String?
+  provider               String          @default("LOCAL")
+  providerUserId         String?         @unique
+  role                   Role            @default(CLIENT)
+  organizationId         String
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+  firstName              String?
+  lastName               String?
+  phone                  String?
+  jobTitle               String?
+  websiteUrl             String?
+  country                String?
+  timezone               String?
+  avatarUrl              String?
+  isEmailVerified        Boolean         @default(false)
+  verificationToken      String?
+  resetPasswordToken     String?
+  resetPasswordExpires   DateTime?
+  refreshToken           String?
+  twoFactorEnabled       Boolean         @default(false)
+  twoFactorSecret        String?
+  twoFactorRecoveryCodes String?
+  activityLogs           ActivityLog[]
+  auditLogs              AuditLog[]
+  assignedDeals          Deal[]
+  assignedLeads          Lead[]
+  leadActivities         LeadActivity[]
+  LeadNote               LeadNote[]
+  loginHistory           LoginHistory[]
+  organization           Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  preferences            UserPreference?
 }
 
 model UserPreference {
-  id                  String   @id @default(uuid())
-  userId              String   @unique
-  language            String   @default("en")
-  timezone            String   @default("UTC")
-  dateFormat          String   @default("YYYY-MM-DD")
-  currency            String   @default("INR")
-  theme               String   @default("light")
-  density             String   @default("comfortable")
-  sidebarMode         String   @default("expanded")
-  
-  // Notification Preferences
-  emailProductUpdates Boolean  @default(true)
-  emailBillingAlerts  Boolean  @default(true)
-  emailSecurityAlerts Boolean  @default(true)
-  emailMarketing      Boolean  @default(false)
-  emailWeeklyReports  Boolean  @default(true)
-  
-  inAppActivity       Boolean  @default(true)
-  inAppAiUpdates      Boolean  @default(true)
-  inAppBillingEvents  Boolean  @default(true)
-  inAppSupportUpdates Boolean  @default(true)
-  
-  // AI Configs
-  aiModel             String   @default("gpt-4o")
-  aiResponseLength    String   @default("medium")
-  aiCreativityLevel   Float    @default(0.7)
-  aiDefaultLanguage   String   @default("en")
-
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String  @id @default(uuid())
+  userId              String  @unique
+  language            String  @default("en")
+  timezone            String  @default("UTC")
+  dateFormat          String  @default("YYYY-MM-DD")
+  currency            String  @default("INR")
+  theme               String  @default("light")
+  density             String  @default("comfortable")
+  sidebarMode         String  @default("expanded")
+  emailProductUpdates Boolean @default(true)
+  emailBillingAlerts  Boolean @default(true)
+  emailSecurityAlerts Boolean @default(true)
+  emailMarketing      Boolean @default(false)
+  emailWeeklyReports  Boolean @default(true)
+  inAppActivity       Boolean @default(true)
+  inAppAiUpdates      Boolean @default(true)
+  inAppBillingEvents  Boolean @default(true)
+  inAppSupportUpdates Boolean @default(true)
+  aiModel             String  @default("gpt-4o")
+  aiResponseLength    String  @default("medium")
+  aiCreativityLevel   Float   @default(0.7)
+  aiDefaultLanguage   String  @default("en")
+  user                User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model LoginHistory {
@@ -109,298 +120,290 @@ model LoginHistory {
   ipAddress String
   location  String
   loginTime DateTime @default(now())
-
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Client {
-  id              String         @id @default(uuid())
-  name            String
-  industry        String?
-  organizationId  String
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-
-  organization    Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  adAccounts      AdAccount[]
-  reports         Report[]
+  id             String       @id @default(uuid())
+  name           String
+  industry       String?
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  adAccounts     AdAccount[]
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  reports        Report[]
 }
 
 model WhiteLabelConfig {
-  id              String         @id @default(uuid())
-  organizationId  String         @unique
-  customDomain    String?
-  primaryColor    String?
-  logoUrl         String?
-  supportEmail    String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-
-  organization    Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id             String       @id @default(uuid())
+  organizationId String       @unique
+  customDomain   String?
+  primaryColor   String?
+  logoUrl        String?
+  supportEmail   String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 
-// -----------------------------------------------------------------------------
-// BILLING & SUBSCRIPTIONS
-// -----------------------------------------------------------------------------
-
-enum PlanTier {
-  FREE
-  STARTER
-  GROWTH
-  PROFESSIONAL
-  AGENCY
-  ENTERPRISE
+model VerificationToken {
+  id         String   @id @default(uuid())
+  identifier String
+  token      String   @unique
+  type       String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
 }
 
 model Subscription {
-  id                 String         @id @default(uuid())
-  organizationId     String
-  tier               PlanTier       @default(FREE)
-  status             String         // ACTIVE, CANCELED, PAST_DUE
-  gatewayPaymentId   String?        // Razorpay order ID or Stripe session ID
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
-
-  organization    Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  invoices        Invoice[]
+  id               String       @id @default(uuid())
+  organizationId   String
+  tier             PlanTier     @default(FREE)
+  status           String
+  gatewayPaymentId String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  invoices         Invoice[]
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 
 model Invoice {
-  id              String         @id @default(uuid())
-  subscriptionId  String
-  amount          Float
-  status          String         // PAID, PENDING, FAILED
-  pdfUrl          String?
-  createdAt       DateTime       @default(now())
-
-  subscription    Subscription   @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  id             String       @id @default(uuid())
+  subscriptionId String
+  amount         Float
+  status         String
+  pdfUrl         String?
+  createdAt      DateTime     @default(now())
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 }
 
-// -----------------------------------------------------------------------------
-// ADVERTISING CORE (CAMPAIGNS, ADS, BUDGETS)
-// -----------------------------------------------------------------------------
-
-enum Platform {
-  GOOGLE_ADS
-  META_ADS
-  TIKTOK_ADS
+model PlanLimit {
+  id            String   @id @default(uuid())
+  tier          PlanTier @unique
+  maxCampaigns  Int      @default(1)
+  maxUsers      Int      @default(1)
+  maxAdAccounts Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model AdAccount {
-  id              String         @id @default(uuid())
-  clientId        String
-  platform        Platform
-  platformId      String         // External ID (e.g. Google Ads Account ID)
-  status          String         // ACTIVE, DISCONNECTED
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-
-  client          Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  campaigns       Campaign[]
+  id         String     @id @default(uuid())
+  clientId   String
+  platform   Platform
+  platformId String
+  status     String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  client     Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  campaigns  Campaign[]
 }
 
 model Campaign {
-  id              String         @id @default(uuid())
-  adAccountId     String
-  name            String
-  status          String         // ACTIVE, PAUSED, REMOVED
-  objective       String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-
-  adAccount       AdAccount      @relation(fields: [adAccountId], references: [id], onDelete: Cascade)
-  adGroups        AdGroup[]
-  budgets         Budget[]
-  metrics         CampaignMetric[]
-  automations     AutomationRule[]
-  aiRecommendations AiRecommendation[]
+  id                 String             @id @default(uuid())
+  organizationId     String
+  adAccountId        String?
+  name               String
+  source             CampaignSource     @default(INTERNAL)
+  providerCampaignId String?
+  providerAccountId  String?
+  status             String
+  objective          String?
+  budget             Float?
+  startDate          DateTime?
+  endDate            DateTime?
+  templateId         String?
+  deletedAt          DateTime?
+  performanceScore   Float?             @default(0)
+  deliveryScore      Float?             @default(0)
+  optimizationScore  Float?             @default(0)
+  overallHealthScore Float?             @default(0)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  adGroups           AdGroup[]
+  aiRecommendations  AiRecommendation[]
+  automations        AutomationRule[]
+  budgets            Budget[]
+  adAccount          AdAccount?         @relation(fields: [adAccountId], references: [id], onDelete: Cascade)
+  organization       Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  template           CampaignTemplate?  @relation(fields: [templateId], references: [id])
+  metrics            CampaignMetric[]
 }
 
 model AdGroup {
-  id              String         @id @default(uuid())
-  campaignId      String
-  name            String
-  status          String
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-
-  campaign        Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  ads             Ad[]
-  keywords        Keyword[]
+  id                String     @id @default(uuid())
+  campaignId        String
+  name              String
+  providerAdGroupId String?
+  status            String
+  bid               Decimal?
+  targetingJson     Json?
+  deletedAt         DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  ads               Ad[]
+  campaign          Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  Creative          Creative[]
+  keywords          Keyword[]
 }
 
-model Ad {
-  id              String         @id @default(uuid())
-  adGroupId       String
-  name            String
-  headline        String?
-  description     String?
-  imageUrl        String?
-  status          String
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-
-  adGroup         AdGroup        @relation(fields: [adGroupId], references: [id], onDelete: Cascade)
+model Creative {
+  id                 String    @id @default(uuid())
+  adGroupId          String
+  type               String
+  providerCreativeId String?
+  headline           String?
+  description        String?
+  contentUrl         String?
+  status             String
+  deletedAt          DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  adGroup            AdGroup   @relation(fields: [adGroupId], references: [id], onDelete: Cascade)
 }
 
 model Keyword {
-  id              String         @id @default(uuid())
-  adGroupId       String
-  text            String
-  matchType       String         // EXACT, PHRASE, BROAD
-  status          String
-  createdAt       DateTime       @default(now())
-
-  adGroup         AdGroup        @relation(fields: [adGroupId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid())
+  adGroupId String
+  text      String
+  matchType String
+  status    String
+  createdAt DateTime @default(now())
+  adGroup   AdGroup  @relation(fields: [adGroupId], references: [id], onDelete: Cascade)
 }
 
 model Budget {
-  id              String         @id @default(uuid())
-  campaignId      String
-  amount          Float
-  period          String         // DAILY, LIFETIME
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-
-  campaign        Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  id         String   @id @default(uuid())
+  campaignId String
+  amount     Float
+  period     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 }
 
 model CampaignMetric {
-  id              String         @id @default(uuid())
-  campaignId      String
-  date            DateTime
-  spend           Float          @default(0)
-  impressions     Int            @default(0)
-  clicks          Int            @default(0)
-  conversions     Float          @default(0)
-  roas            Float          @default(0)
-  createdAt       DateTime       @default(now())
-
-  campaign        Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-}
-
-// -----------------------------------------------------------------------------
-// AUTOMATION & AI
-// -----------------------------------------------------------------------------
-
-model AutomationRule {
-  id              String         @id @default(uuid())
-  campaignId      String?
-  name            String
-  condition       String         // Stored as JSON logic or string
-  action          String         // Stored as JSON action payload
-  status          String         // ACTIVE, PAUSED
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-
-  campaign        Campaign?      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  id          String   @id @default(uuid())
+  campaignId  String
+  date        DateTime
+  spend       Float    @default(0)
+  impressions Int      @default(0)
+  clicks      Int      @default(0)
+  conversions Float    @default(0)
+  revenue     Float    @default(0)
+  ctr         Float    @default(0)
+  cpc         Float    @default(0)
+  cpm         Float    @default(0)
+  roas        Float    @default(0)
+  cpa         Float    @default(0)
+  cpl         Float    @default(0)
+  createdAt   DateTime @default(now())
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 }
 
 model AiRecommendation {
-  id              String         @id @default(uuid())
-  campaignId      String
-  title           String
-  description     String
-  type            String         // BUDGET, CREATIVE, KEYWORD
-  status          String         // PENDING, APPLIED, REJECTED
-  createdAt       DateTime       @default(now())
-
-  campaign        Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  id          String   @id @default(uuid())
+  campaignId  String
+  title       String
+  description String
+  type        String
+  status      String
+  createdAt   DateTime @default(now())
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 }
 
-// -----------------------------------------------------------------------------
-// SYSTEM & REPORTING
-// -----------------------------------------------------------------------------
-
 model Report {
-  id              String         @id @default(uuid())
-  clientId        String
-  name            String
-  url             String?
-  schedule        String?        // DAILY, WEEKLY, MONTHLY
-  createdAt       DateTime       @default(now())
-
-  client          Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  id             String       @id @default(uuid())
+  clientId       String?
+  name           String
+  url            String?
+  createdAt      DateTime     @default(now())
+  error          String?
+  format         ReportFormat
+  lastRunAt      DateTime?
+  organizationId String
+  scheduleCron   String?
+  status         ReportStatus @default(PENDING)
+  type           ReportType
+  updatedAt      DateTime     @updatedAt
+  client         Client?      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 
 model Notification {
-  id              String         @id @default(uuid())
-  title           String
-  message         String
-  type            String         // ALERT, INFO, SUCCESS
-  isRead          Boolean        @default(false)
-  createdAt       DateTime       @default(now())
+  id        String   @id @default(uuid())
+  title     String
+  message   String
+  type      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
 
 model ApiToken {
-  id              String         @id @default(uuid())
-  organizationId  String
-  token           String         @unique
-  name            String
-  createdAt       DateTime       @default(now())
-
-  organization    Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id             String       @id @default(uuid())
+  organizationId String
+  token          String       @unique
+  name           String
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 
 model AuditLog {
-  id              String         @id @default(uuid())
-  userId          String
-  action          String
-  resource        String
-  details         String?
-  createdAt       DateTime       @default(now())
-
-  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String       @id @default(uuid())
+  organizationId String
+  entity         AuditEntity
+  entityId       String
+  action         AuditAction
+  performedBy    String
+  detailsJson    Json?
+  createdAt      DateTime     @default(now())
+  userId         String?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  User           User?        @relation(fields: [userId], references: [id])
 }
 
 model ActivityLog {
-  id              String         @id @default(uuid())
-  userId          String
-  description     String
-  createdAt       DateTime       @default(now())
-
-  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String   @id @default(uuid())
+  userId      String
+  description String
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// -----------------------------------------------------------------------------
-// CREATIVE ASSETS & CAMPAIGN LINKS
-// -----------------------------------------------------------------------------
-
 model CreativeAsset {
-  id              String             @id @default(uuid())
-  organizationId  String
-  clientId        String
-  assetType       String             // IMAGE, VIDEO, LOGO, DOCUMENT
-  assetName       String
-  fileUrl         String
-  thumbnailUrl    String?
-  width           Int?
-  height          Int?
-  duration        Float?
-  format          String
-  createdAt       DateTime           @default(now())
-
-  versions        CreativeVersion[]
+  id             String            @id @default(uuid())
+  organizationId String
+  clientId       String
+  assetType      String
+  assetName      String
+  fileUrl        String
+  thumbnailUrl   String?
+  width          Int?
+  height         Int?
+  duration       Float?
+  format         String
+  createdAt      DateTime          @default(now())
+  versions       CreativeVersion[]
 }
 
 model CreativeVersion {
-  id              String             @id @default(uuid())
-  assetId         String
-  ratio           String             // 1:1, 9:16, 1.91:1, 4:1, 16:9
-  width           Int
-  height          Int
-  generatedByAI   Boolean            @default(false)
-  status          String             // READY, CROPPING
-
-  asset           CreativeAsset      @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  id            String        @id @default(uuid())
+  assetId       String
+  ratio         String
+  width         Int
+  height        Int
+  generatedByAI Boolean       @default(false)
+  status        String
+  asset         CreativeAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
 }
 
 model CampaignAsset {
-  id              String             @id @default(uuid())
-  campaignId      String
-  assetId         String
-  platform        String             // GOOGLE, META, BOTH
-  placement       String             // FEED, STORY, REEL, SEARCH, DISPLAY
+  id         String @id @default(uuid())
+  campaignId String
+  assetId    String
+  platform   String
+  placement  String
 }
 
 model SubscriptionPlan {
@@ -416,7 +419,6 @@ model PlanFeature {
   planId     String
   featureKey String
   enabled    Boolean          @default(true)
-
   plan       SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
 }
 
@@ -433,4 +435,580 @@ model UsageTracking {
   featureKey     String
   usageCount     Int      @default(0)
   updatedAt      DateTime @updatedAt
+}
+
+model Lead {
+  id             String         @id @default(uuid())
+  organizationId String
+  stage          LeadStage      @default(NEW)
+  assignedToId   String?
+  firstName      String
+  lastName       String?
+  email          String?
+  phone          String?
+  company        String?
+  source         String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  deals          Deal[]
+  assignedTo     User?          @relation(fields: [assignedToId], references: [id])
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  activities     LeadActivity[]
+  notes          LeadNote[]
+}
+
+model LeadNote {
+  id        String   @id @default(uuid())
+  leadId    String
+  userId    String?
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id])
+}
+
+model Contact {
+  id             String       @id @default(uuid())
+  organizationId String
+  firstName      String
+  lastName       String?
+  email          String?
+  phone          String?
+  company        String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  deals          Deal[]
+}
+
+model Visitor {
+  id             String       @id @default(uuid())
+  organizationId String
+  userAgent      String?
+  ipAddress      String?
+  createdAt      DateTime     @default(now())
+  sessions       Session[]
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model Session {
+  id        String    @id @default(uuid())
+  visitorId String
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  pageViews Int       @default(0)
+  events    Event[]
+  visitor   Visitor   @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+}
+
+model Event {
+  id        String    @id @default(uuid())
+  sessionId String
+  type      EventType
+  payload   Json
+  timestamp DateTime  @default(now())
+  session   Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model GoogleAnalyticsConnector {
+  id             String          @id @default(uuid())
+  organizationId String
+  viewId         String
+  status         ConnectorStatus @default(DISABLED)
+  lastSyncedAt   DateTime?
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model SearchConsoleConnector {
+  id             String          @id @default(uuid())
+  organizationId String
+  siteUrl        String
+  status         ConnectorStatus @default(DISABLED)
+  lastSyncedAt   DateTime?
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model IntegrationCredential {
+  id             String       @id @default(cuid())
+  organizationId String
+  provider       ProviderEnum
+  apiKey         String?
+  refreshToken   String?
+  metadataJson   Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, provider])
+}
+
+model GoogleAdsConnector {
+  id             String          @id @default(uuid())
+  organizationId String
+  customerId     String
+  status         ConnectorStatus @default(DISABLED)
+  lastSyncedAt   DateTime?
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model MetaAdsConnector {
+  id             String          @id @default(uuid())
+  organizationId String
+  adAccountId    String
+  status         ConnectorStatus @default(DISABLED)
+  lastSyncedAt   DateTime?
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model SyncJob {
+  id             String       @id @default(uuid())
+  organizationId String
+  connectorType  String
+  status         SyncStatus   @default(PENDING)
+  attempts       Int          @default(0)
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  errorMessage   String?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  SyncLog        SyncLog[]
+}
+
+model SyncLog {
+  id        String   @id @default(uuid())
+  syncJobId String
+  message   String
+  createdAt DateTime @default(now())
+  syncJob   SyncJob  @relation(fields: [syncJobId], references: [id], onDelete: Cascade)
+}
+
+model Metric {
+  id             String       @id @default(uuid())
+  organizationId String
+  metricKey      String
+  value          Float
+  periodStart    DateTime
+  periodEnd      DateTime
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model Attribution {
+  id             String       @id @default(uuid())
+  organizationId String
+  source         String
+  medium         String
+  campaign       String?
+  clicks         Int          @default(0)
+  conversions    Int          @default(0)
+  revenue        Float        @default(0)
+  periodStart    DateTime
+  periodEnd      DateTime
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model AiInsight {
+  id             String       @id @default(uuid())
+  organizationId String
+  type           String
+  payload        Json
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  AiFeedback     AiFeedback[]
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model AiFeedback {
+  id        String    @id @default(uuid())
+  insightId String
+  rating    Int
+  comment   String?
+  createdAt DateTime  @default(now())
+  insight   AiInsight @relation(fields: [insightId], references: [id], onDelete: Cascade)
+}
+
+model PipelineStage {
+  id                  String   @id @default(uuid())
+  pipelineId          String
+  name                String
+  order               Int
+  forecastProbability Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  deals               Deal[]
+  pipeline            Pipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+}
+
+model Deal {
+  id             String        @id @default(uuid())
+  organizationId String
+  title          String
+  value          Float         @default(0)
+  expectedClose  DateTime?
+  status         String        @default("OPEN")
+  stageId        String
+  contactId      String?
+  leadId         String?
+  assignedToId   String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  assignedTo     User?         @relation(fields: [assignedToId], references: [id])
+  contact        Contact?      @relation(fields: [contactId], references: [id])
+  lead           Lead?         @relation(fields: [leadId], references: [id])
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  stage          PipelineStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+}
+
+model LeadActivity {
+  id          String   @id @default(uuid())
+  leadId      String
+  userId      String?
+  type        String
+  description String
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user        User?    @relation(fields: [userId], references: [id])
+}
+
+model AutomationRule {
+  id             String                @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  enabled        Boolean               @default(true)
+  version        Int                   @default(1)
+  isDraft        Boolean               @default(true)
+  isPublished    Boolean               @default(false)
+  publishedAt    DateTime?
+  createdBy      String
+  createdByType  CreatedByType
+  updatedBy      String?
+  executionCount Int                   @default(0)
+  successCount   Int                   @default(0)
+  failureCount   Int                   @default(0)
+  lastExecutedAt DateTime?
+  averageExecMs  Float?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  campaignId     String?
+  actions        AutomationAction[]
+  executions     AutomationExecution[]
+  Campaign       Campaign?             @relation(fields: [campaignId], references: [id])
+  organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  triggers       AutomationTrigger[]
+  workflows      AutomationWorkflow[]
+}
+
+model AutomationTrigger {
+  id                String             @id @default(uuid())
+  ruleId            String
+  triggerType       TriggerType
+  configJson        Json
+  conditionOperator ConditionOperator?
+  rule              AutomationRule     @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+}
+
+model AutomationAction {
+  id             String         @id @default(uuid())
+  ruleId         String
+  actionType     ActionType
+  configJson     Json
+  executionOrder Int            @default(0)
+  rule           AutomationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+}
+
+model AutomationWorkflow {
+  id           String         @id @default(uuid())
+  ruleId       String
+  workflowJson Json
+  rule         AutomationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+}
+
+model AutomationExecution {
+  id               String                    @id @default(uuid())
+  ruleId           String
+  organizationId   String
+  status           ExecutionStatus           @default(PENDING)
+  startedAt        DateTime                  @default(now())
+  completedAt      DateTime?
+  durationMs       Int?
+  triggeredBy      String?
+  triggerSource    String?
+  executionContext Json?
+  organization     Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  rule             AutomationRule            @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  steps            AutomationExecutionStep[]
+}
+
+model AutomationExecutionStep {
+  id           String              @id @default(uuid())
+  executionId  String
+  stepType     StepType
+  stepName     String
+  status       ExecutionStepStatus @default(PENDING)
+  startedAt    DateTime?
+  completedAt  DateTime?
+  resultJson   Json?
+  errorMessage String?
+  execution    AutomationExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+}
+
+model AutomationTemplate {
+  id           String   @id @default(uuid())
+  name         String
+  category     String
+  description  String?
+  workflowJson Json
+  isSystem     Boolean  @default(false)
+  isPublic     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model CampaignTemplate {
+  id          String     @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  Campaign    Campaign[]
+}
+
+model Pipeline {
+  id             String          @id @default(uuid())
+  name           String
+  organizationId String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  PipelineStage  PipelineStage[]
+}
+
+model Ad {
+  id        String   @id @default(uuid())
+  adGroupId String
+  name      String
+  status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  adGroup   AdGroup  @relation(fields: [adGroupId], references: [id], onDelete: Cascade)
+}
+
+model WebhookEndpoint {
+  id             String            @id @default(uuid())
+  organizationId String
+  url            String
+  secret         String
+  isActive       Boolean           @default(true)
+  events         String[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  deliveries     WebhookDelivery[]
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model WebhookDelivery {
+  id           String          @id @default(uuid())
+  endpointId   String
+  eventType    String
+  payload      Json
+  status       String
+  responseCode Int?
+  durationMs   Int?
+  createdAt    DateTime        @default(now())
+  endpoint     WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+}
+
+model MarketplaceApp {
+  id            String                    @id @default(uuid())
+  name          String
+  description   String
+  developer     String
+  isVerified    Boolean                   @default(false)
+  logoUrl       String?
+  scopes        String[]
+  webhookUrl    String?
+  status        String                    @default("ACTIVE")
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  installations MarketplaceInstallation[]
+}
+
+model MarketplaceInstallation {
+  id             String         @id @default(uuid())
+  organizationId String
+  appId          String
+  installedAt    DateTime       @default(now())
+  status         String         @default("ACTIVE")
+  app            MarketplaceApp @relation(fields: [appId], references: [id], onDelete: Cascade)
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  ADMIN
+  AGENCY
+  CLIENT
+}
+
+enum PlanTier {
+  FREE
+  STARTER
+  GROWTH
+  PROFESSIONAL
+  AGENCY
+  ENTERPRISE
+}
+
+enum Platform {
+  GOOGLE_ADS
+  META_ADS
+  TIKTOK_ADS
+}
+
+enum ProviderEnum {
+  GOOGLE_ADS
+  META_ADS
+}
+
+enum CampaignSource {
+  INTERNAL
+  GOOGLE_ADS
+  META_ADS
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  CLONE
+  BULK_CREATE
+  BULK_UPDATE
+  BULK_DELETE
+  SYNC
+  HEALTH_ALERT
+}
+
+enum ReportType {
+  ROI
+  ATTRIBUTION
+  PERFORMANCE
+  EXECUTIVE_SUMMARY
+}
+
+enum ReportFormat {
+  PDF
+  CSV
+  XLSX
+}
+
+enum ReportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum LeadStage {
+  NEW
+  CONTACTED
+  QUALIFIED
+  LOST
+}
+
+enum EventType {
+  PAGE_VIEW
+  CLICK
+  FORM_SUBMIT
+  CUSTOM
+}
+
+enum ConnectorStatus {
+  ENABLED
+  DISABLED
+  ERROR
+}
+
+enum SyncStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum CreatedByType {
+  USER
+  SYSTEM
+  AI
+}
+
+enum TriggerType {
+  SPEND
+  REVENUE
+  LEADS
+  ROAS
+  TIME
+  CPA
+  CTR
+  CPC
+  CPM
+  CONVERSIONS
+  HEALTH_SCORE
+  CAMPAIGN_STATUS
+  SYNC_FAILURE
+  WEBHOOK
+  MANUAL
+}
+
+enum ConditionOperator {
+  AND
+  OR
+}
+
+enum ActionType {
+  PAUSE_CAMPAIGN
+  ENABLE_CAMPAIGN
+  UPDATE_BUDGET
+  SEND_NOTIFICATION
+  GENERATE_REPORT
+  CREATE_TASK
+  SEND_EMAIL
+  SEND_WEBHOOK
+  CREATE_AUDIT_EVENT
+  CREATE_AI_INSIGHT
+  ASSIGN_LEAD
+  CHANGE_LEAD_STAGE
+  CREATE_INTERNAL_ALERT
+}
+
+enum ExecutionStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILURE
+}
+
+enum StepType {
+  TRIGGER_EVAL
+  ACTION_EXEC
+  WORKFLOW_STEP
+}
+
+enum ExecutionStepStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILURE
+}
+
+enum AuditEntity {
+  CAMPAIGN
+  AD_GROUP
+  AD
+  CREATIVE
+  KEYWORD
+  BUDGET
+  LEAD
+  CONTACT
+  DEAL
+  PIPELINE
+  OTHER
 }

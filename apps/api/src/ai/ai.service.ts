@@ -24,7 +24,7 @@ export class AiService {
         ...(this.openAiBaseUrl ? { baseURL: this.openAiBaseUrl } : {})
       });
     } else {
-      this.logger.warn('OPENAI_API_KEY is missing. Will try failovers or simulations.');
+      this.logger.warn('OPENAI_API_KEY is missing. Using configured alternative providers only.');
     }
   }
 
@@ -39,62 +39,71 @@ export class AiService {
     if (this.geminiKey) providersToTry.push('gemini');
 
     if (providersToTry.length === 0) {
-      const activeName = campaigns.length > 0 ? campaigns[0].name : "No active campaigns";
-      const roasVal = campaigns.length > 0 ? campaigns[0].roas : "0.0x";
-      const mockReply = `[Mock AI Response]: Based on your organization's data, your active campaign (${activeName}) is performing at ${roasVal} ROAS. (Configure OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY to enable full live advice)`;
-      await this.logUsage(email, 'chat_simulated', 'MOCK', 50, 0.0);
-      return mockReply;
+      return 'AI provider unavailable. Configure OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY to enable live AI responses.';
     }
 
     for (const provider of providersToTry) {
       try {
         this.logger.log(`Attempting AI generation via: ${provider}`);
         const result = await this.executeProviderCall(provider, systemPrompt, userMessage);
-        
+
         await this.logUsage(email, 'chat_query', provider, result.tokens, result.cost);
+        await this.storeAiInsight(email, 'chat', {
+          prompt: userMessage,
+          response: result.text,
+          provider,
+          tokens: result.tokens,
+          cost: result.cost,
+        });
+
         return result.text;
       } catch (err) {
         this.logger.error(`AI call to ${provider} failed: ${err.message}. Trying next provider in failover chain...`);
       }
     }
 
-    return 'Sorry, all active AI providers returned errors. Please verify API key configurations.';
+    return 'Sorry, all configured AI providers returned errors. Please verify API key configurations.';
   }
 
   async generateCampaign(params: any) {
-    // Return structured AI Campaign metadata
-    const name = `${params.businessName || 'Business'} - AI Accelerated PMax`;
-    return {
-      campaignName: name,
-      adGroups: [
-        { 
-          name: 'High-Intent Search Terms', 
-          keywords: ['buy software online', 'best saas tool', 'enterprise solution', 'b2b platform'],
-          copy: { headline: "Scale Your Business Faster", description: "The #1 rated enterprise solution for automated Revenue." }
-        },
-        { 
-          name: 'Competitor Conquesting', 
-          keywords: ['alternative to hubspot', 'salesforce replacement', 'cheaper crm'],
-          copy: { headline: "Switch & Save 50% Today", description: "Don't overpay for legacy systems. Migrate your team in 24 hours." }
-        },
-        { 
-          name: 'Retargeting (Meta/IG)', 
-          keywords: ['website visitors 30d', 'cart abandoners', 'newsletter subscribers'],
-          copy: { headline: "Still thinking about it?", description: "Claim your 14-day free trial before the offer expires this Friday." }
+    const providersToTry = [];
+    if (this.openAiKey) providersToTry.push('openai');
+    if (this.anthropicKey) providersToTry.push('anthropic');
+    if (this.geminiKey) providersToTry.push('gemini');
+
+    if (providersToTry.length === 0) {
+      throw new Error('No configured AI provider available. Configure OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY.');
+    }
+
+    const businessName = params.businessName || 'the business';
+    const prompt = `You are a marketing campaign strategist. Generate a campaign plan for ${businessName} using the following input: ${JSON.stringify(params)}. Return a JSON object with fields: campaignName, adGroups (name, keywords, copy headline, copy description), budget, targeting, forecast (estimatedCPA, predictedConversions, roasPotential).`;
+    const systemPrompt = `You are a high-performing AI campaign planner. Only output valid JSON.`;
+
+    for (const provider of providersToTry) {
+      try {
+        this.logger.log(`Generating campaign via: ${provider}`);
+        const result = await this.executeProviderCall(provider, systemPrompt, prompt);
+
+        await this.logUsage(params.userEmail || 'system', 'generate_campaign', provider, result.tokens, result.cost);
+        await this.storeAiInsight(params.userEmail || 'system', 'campaign_generation', {
+          prompt,
+          response: result.text,
+          provider,
+          tokens: result.tokens,
+          cost: result.cost,
+        });
+
+        try {
+          return JSON.parse(result.text);
+        } catch (parseError) {
+          return { rawOutput: result.text };
         }
-      ],
-      budget: params.budget || '$50/day',
-      targeting: {
-        demographics: ['Age 25-45', 'Top 10% Household Income'],
-        interests: ['Software Development', 'Marketing Strategy', 'B2B Services'],
-        locations: ['United States', 'United Kingdom', 'Canada']
-      },
-      forecast: {
-        estimatedCPA: '$24.50',
-        predictedConversions: '145/mo',
-        roasPotential: '3.8x'
+      } catch (err) {
+        this.logger.error(`Campaign generation call to ${provider} failed: ${err.message}. Trying next provider...`);
       }
-    };
+    }
+
+    throw new Error('Campaign generation failed for all configured AI providers.');
   }
 
   private async executeProviderCall(provider: string, systemPrompt: string, userMessage: string) {
@@ -186,5 +195,20 @@ export class AiService {
   private async logUsage(email: string, action: string, provider: string, tokens: number, cost: number) {
     this.logger.log(`AI TELEMETRY: ${action} | Provider: ${provider} | Tokens: ${tokens} | Cost Estimate: $${cost.toFixed(5)}`);
     await this.queueService.queueAiLog(email, action, provider, tokens, cost);
+  }
+
+  private async storeAiInsight(email: string, type: string, payload: any) {
+    const user = await this.prisma.client.user.findUnique({ where: { email } });
+    if (!user) {
+      return;
+    }
+
+    await this.prisma.client.aiInsight.create({
+      data: {
+        organizationId: user.organizationId,
+        type,
+        payload,
+      }
+    });
   }
 }

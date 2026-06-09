@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   reactStrictMode: true,
   transpilePackages: ["ui"],
   async rewrites() {
@@ -27,7 +28,7 @@ const nextConfig = {
         { source: '/api/auth/reset-password',         destination: `${backendUrl}/api/auth/reset-password` },
         { source: '/api/auth/magic-link-request',     destination: `${backendUrl}/api/auth/magic-link-request` },
         { source: '/api/auth/magic-link-verify',      destination: `${backendUrl}/api/auth/magic-link-verify` },
-        { source: '/api/auth/social-sync',            destination: `${backendUrl}/api/auth/social-sync` },
+        { source: '/api/auth/google',                 destination: `${backendUrl}/api/auth/google` },
       ],
 
       /**

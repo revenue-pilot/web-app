@@ -1,0 +1,31 @@
+FROM node:18-alpine AS builder
+WORKDIR /usr/src/app
+
+# Copy package management files
+COPY package*.json ./
+COPY turbo.json ./
+COPY apps/api/package*.json ./apps/api/
+COPY packages/database/package*.json ./packages/database/
+
+# Install dependencies
+RUN npm install
+
+# Copy source code
+COPY apps/api ./apps/api
+COPY packages/database ./packages/database
+
+# Build
+RUN cd packages/database && npx prisma generate
+RUN cd apps/api && npm run build
+
+FROM node:18-alpine AS production
+WORKDIR /usr/src/app
+
+COPY --from=builder /usr/src/app/node_modules ./node_modules
+COPY --from=builder /usr/src/app/apps/api/dist ./dist
+COPY --from=builder /usr/src/app/packages/database/node_modules/.prisma ./node_modules/.prisma
+
+ENV NODE_ENV=production
+EXPOSE 3001
+
+CMD ["node", "dist/main"]

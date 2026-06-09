@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { ArrowRight, Mail, Lock, ShieldAlert, CheckCircle2, Chrome, KeyRound } from "lucide-react";
+import { GoogleLogin } from '@react-oauth/google';
 
 export default function LoginPage() {
   const [loginMode, setLoginMode] = useState<"password" | "magic">("password");
@@ -117,24 +118,19 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSuccess = async (credentialResponse: any) => {
     setLoading(true);
     setErrorMsg("");
-    setSuccessMsg("Connecting Google account...");
+    setSuccessMsg("Authenticating with Google...");
 
     try {
-      // Simulate Google OAuth dynamic registration & workspace provisioning
-      const res = await fetch("/api/auth/social-sync", {
+      const res = await fetch("/api/auth/google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: "arjun@Revenuepilot.com",
-          name: "Arjun Mehta",
-          provider: "Google"
-        })
+        body: JSON.stringify({ credential: credentialResponse.credential })
       });
       const data = await res.json();
-      if (res.ok && data.success) {
+      if (res.ok && data.access_token) {
         setSuccessMsg("Google sign-in complete. Redirecting...");
         localStorage.setItem("user_email", data.user.email);
         localStorage.setItem("user_role", data.user.role === "ADMIN" ? "Platform Admin" : "Agency Owner");
@@ -143,15 +139,19 @@ export default function LoginPage() {
           window.location.href = data.user.role === "ADMIN" ? "/admin" : "/dashboard";
         }, 800);
       } else {
-        setErrorMsg("Failed to synchronize Google OAuth profile.");
+        setErrorMsg("Failed to authenticate with Google.");
         setSuccessMsg("");
       }
     } catch (e) {
-      setErrorMsg("Unable to complete social sign-in verification.");
+      setErrorMsg("Unable to complete Google sign-in.");
       setSuccessMsg("");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleError = () => {
+    setErrorMsg("Google Sign-In was unsuccessful.");
   };
 
   return (
@@ -246,14 +246,10 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="text-[10px] text-gray-450 font-semibold leading-relaxed py-1">
-                * Note: If your email does not exist, a new workspace and starter tenant account will be registered automatically upon first sign in.
-              </div>
-
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 text-white py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-md shadow-emerald-500/10 text-xs"
+                className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 text-white py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-md shadow-emerald-500/10 text-xs mt-2"
               >
                 <span>{loading ? "Signing in..." : "Continue to Account"}</span>
                 {!loading && <ArrowRight className="w-4 h-4" />}
@@ -301,18 +297,24 @@ export default function LoginPage() {
           </div>
 
           {/* Social login buttons */}
-          <button
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={loading}
-            className="w-full border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 py-2.5 rounded-xl text-xs font-bold text-gray-700 transition-all flex items-center justify-center gap-2"
-          >
-            <Chrome size={16} className="text-red-500" />
-            <span>Sign In with Google</span>
-          </button>
+          <div className="w-full flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              useOneTap
+              theme="outline"
+              shape="rectangular"
+              size="large"
+              text="signin_with"
+            />
+          </div>
         </div>
 
-        <p className="mt-8 text-center text-xs text-gray-400 font-semibold leading-relaxed">
+        <p className="mt-6 text-center text-sm text-gray-600 font-medium">
+          Don't have an account? <a href="/signup" className="text-emerald-600 hover:text-emerald-700 font-bold hover:underline transition-colors">Sign up</a>
+        </p>
+
+        <p className="mt-6 text-center text-xs text-gray-400 font-semibold leading-relaxed">
           By clicking continue, you agree to our <a href="#" className="text-gray-500 hover:text-gray-700 underline underline-offset-4 font-bold">Terms of Service</a> and <a href="#" className="text-gray-500 hover:text-gray-700 underline underline-offset-4 font-bold">Privacy Policy</a>.
         </p>
       </div>

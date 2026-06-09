@@ -86,27 +86,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const navItems = [
-    { href: "/dashboard", label: "Command Nexus", icon: <LayoutDashboard size={18} /> },
-    { href: "/dashboard/workspaces", label: "Orbit Workspaces", icon: <Layers size={18} /> },
-    { href: "/dashboard/clients", label: "Client Constellation", icon: <Users size={18} /> },
-    { href: "/dashboard/campaigns", label: "RevenuePilot Studio", icon: <Tv size={18} /> },
+    { href: "/dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
+    { href: "/dashboard/workspaces", label: "Workspaces", icon: <Layers size={18} /> },
+    { href: "/dashboard/clients", label: "Clients", icon: <Users size={18} /> },
+    { href: "/dashboard/campaigns", label: "Campaigns", icon: <Tv size={18} /> },
     { href: "/dashboard/neural-ops", label: "Neural Ops (AI)", icon: <Sparkles size={18} className="text-emerald-500" /> },
-    { href: "/dashboard/pulse-matrix", label: "Pulse Matrix", icon: <Activity size={18} /> },
-    { href: "/dashboard/billing", label: "Revenue Command", icon: <CreditCard size={18} /> },
-    { href: "/dashboard/team", label: "Crew Command", icon: <UserCheck size={18} /> },
-    { href: "/dashboard/automations", label: "Automation Forge", icon: <Zap size={18} /> },
-    { href: "/dashboard/creative-vault", label: "Creative Vault", icon: <ImageIcon size={18} /> },
-    { href: "/dashboard/integrations", label: "Connection Hub", icon: <Link2 size={18} /> },
-    { href: "/dashboard/reports", label: "Insight Archive", icon: <FileBarChart size={18} /> },
-    { href: "/dashboard/notifications", label: "Signal Vault", icon: <Bell size={18} /> },
-    { href: "/dashboard/profile", label: "My Profile", icon: <User size={18} /> },
-    { href: "/dashboard/settings", label: "Control Deck", icon: <Settings size={18} /> },
-    { href: "/dashboard/support", label: "Support Deck", icon: <HelpCircle size={18} /> },
-    { href: "/dashboard/security", label: "Fortress", icon: <ShieldCheck size={18} /> },
-    { href: "/dashboard/activity", label: "Timeline Engine", icon: <History size={18} /> },
-    { href: "/dashboard/ai-insights", label: "Insight Engine", icon: <TrendingUp size={18} /> },
+    { href: "/dashboard/pulse-matrix", label: "Analytics", icon: <Activity size={18} /> },
+    { href: "/dashboard/billing", label: "Billing", icon: <CreditCard size={18} /> },
+    { href: "/dashboard/team", label: "Team", icon: <UserCheck size={18} /> },
+    { href: "/dashboard/automations", label: "Automations", icon: <Zap size={18} /> },
+    { href: "/dashboard/creative-vault", label: "Creatives", icon: <ImageIcon size={18} /> },
+    { href: "/dashboard/integrations", label: "Integrations", icon: <Link2 size={18} /> },
+    { href: "/dashboard/reports", label: "Reports", icon: <FileBarChart size={18} /> },
+    { href: "/dashboard/notifications", label: "Notifications", icon: <Bell size={18} /> },
+    { href: "/dashboard/profile", label: "Profile", icon: <User size={18} /> },
+    { href: "/dashboard/settings", label: "Settings", icon: <Settings size={18} /> },
+    { href: "/dashboard/support", label: "Support", icon: <HelpCircle size={18} /> },
+    { href: "/dashboard/security", label: "Security", icon: <ShieldCheck size={18} /> },
+    { href: "/dashboard/activity", label: "Activity Log", icon: <History size={18} /> },
+    { href: "/dashboard/ai-insights", label: "Insights", icon: <TrendingUp size={18} /> },
     { href: "/dashboard/marketplace", label: "Marketplace", icon: <ShoppingBag size={18} /> },
-    { href: "/admin", label: "Command Core", icon: <Cpu size={18} /> },
+    { href: "/admin", label: "Admin Panel", icon: <Cpu size={18} /> },
   ];
 
   const getModuleKey = (href: string) => {
@@ -137,8 +137,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Sidebar */}
       <aside
         className={`${
-          sidebarOpen ? "w-64" : "w-0 -translate-x-full"
-        } transition-all duration-300 bg-white dark:bg-[#0D121F] border-r border-gray-200/80 dark:border-[#1B2438] flex flex-col shrink-0 z-20 h-full relative`}
+          sidebarOpen ? "w-64" : "w-0"
+        } overflow-hidden transition-all duration-300 bg-white dark:bg-[#0D121F] border-r border-gray-200/80 dark:border-[#1B2438] flex flex-col shrink-0 z-20 h-full relative`}
       >
         {/* Logo */}
         <div className="h-16 flex items-center px-6 border-b border-gray-100 dark:border-[#1B2438] gap-3">

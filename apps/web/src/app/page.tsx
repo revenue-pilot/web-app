@@ -41,7 +41,7 @@ export default function LandingPage() {
   // Tracking log function
   const trackEvent = (category: string, action: string, label: string) => {
     const newEvent: AnalyticsEvent = {
-      id: Math.random().toString(36).substring(2, 9),
+      id: crypto.randomUUID().substring(0, 9),
       timestamp: new Date().toLocaleTimeString(),
       category,
       action,

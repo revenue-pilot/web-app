@@ -1,10 +1,31 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import * as Sentry from '@sentry/node';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
+import { SentryInterceptor } from './common/interceptors/sentry.interceptor';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
 
 async function bootstrap() {
+  // Initialize Sentry
+  const sentryDsn = process.env.SENTRY_DSN;
+  if (sentryDsn) {
+    Sentry.init({
+      dsn: sentryDsn,
+      integrations: [
+        nodeProfilingIntegration(),
+      ],
+      tracesSampleRate: 1.0,
+      profilesSampleRate: 1.0,
+      environment: process.env.NODE_ENV || 'development',
+    });
+  }
+
   const app = await NestFactory.create(AppModule);
+  
+  // Use Sentry Interceptor globally
+  app.useGlobalInterceptors(new SentryInterceptor());
 
   
   // Enforce Helmet HTTP security headers

@@ -1,16 +1,77 @@
 "use client";
-import React, { useState } from "react";
-import { CheckCircle2, Building, Target, Zap, ArrowRight } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { CheckCircle2, Building, Target, Zap, ArrowRight, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import apiClient from "@/lib/apiClient";
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [companyName, setCompanyName] = useState("");
+  const [selectedIndustry, setSelectedIndustry] = useState("");
+  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const router = useRouter();
 
-  const handleNext = () => {
-    if (step < 6) setStep(step + 1);
-    else router.push('/dashboard');
+  useEffect(() => {
+    apiClient.get("/api/onboarding")
+      .then((res) => {
+        if (res.isOnboarded) {
+          router.push('/dashboard');
+        } else {
+          setCompanyName(res.name || "");
+          setSelectedIndustry(res.industry || "");
+          setSelectedGoals(res.goals || []);
+          setStep(res.onboardingStep || 1);
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to load onboarding status:", err);
+        setLoading(false);
+      });
+  }, [router]);
+
+  const handleNextWithData = async (data: any) => {
+    try {
+      let nextStep = step + 1;
+      const payload: any = { onboardingStep: nextStep, ...data };
+
+      if (step === 6 || nextStep > 6) {
+        payload.isOnboarded = true;
+      }
+
+      await apiClient.put("/api/onboarding/step", payload);
+
+      if (step < 6) {
+        setStep(nextStep);
+      } else {
+        router.push('/dashboard');
+      }
+    } catch (err) {
+      console.error("Failed to update onboarding step:", err);
+    }
   };
+
+  const handleNext = () => {
+    if (step === 1) {
+      handleNextWithData({ name: companyName });
+    } else if (step === 4) {
+      handleNextWithData({ industry: selectedIndustry });
+    } else if (step === 5) {
+      handleNextWithData({ goals: selectedGoals });
+    } else {
+      handleNextWithData({});
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-black to-black">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+        <p className="text-zinc-400 text-sm mt-4">Loading your setup progress...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-black to-black">
@@ -41,7 +102,13 @@ export default function OnboardingPage() {
             <div className="space-y-4 text-left mt-8">
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Company Name</label>
-                <input type="text" className="w-full bg-black/50 border border-white/10 rounded-xl py-3 px-4 focus:border-purple-500 focus:outline-none" placeholder="Acme Corp" />
+                <input 
+                  type="text" 
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  className="w-full bg-black/50 border border-white/10 rounded-xl py-3 px-4 focus:border-purple-500 focus:outline-none" 
+                  placeholder="Acme Corp" 
+                />
               </div>
             </div>
           </div>
@@ -55,10 +122,10 @@ export default function OnboardingPage() {
             </div>
             <h1 className="text-3xl font-bold">Connect Google Ads</h1>
             <p className="text-gray-400">One-click secure authorization to import your Search and PMax campaigns.</p>
-            <button onClick={handleNext} className="mt-8 bg-white text-black font-semibold py-3 px-8 rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 mx-auto">
+            <button onClick={() => handleNextWithData({})} className="mt-8 bg-white text-black font-semibold py-3 px-8 rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 mx-auto">
               Authorize Google OAuth
             </button>
-            <button onClick={handleNext} className="text-sm text-gray-500 hover:text-white transition-colors mt-4 block mx-auto">Skip for now</button>
+            <button onClick={() => handleNextWithData({})} className="text-sm text-gray-500 hover:text-white transition-colors mt-4 block mx-auto">Skip for now</button>
           </div>
         )}
 
@@ -70,10 +137,10 @@ export default function OnboardingPage() {
             </div>
             <h1 className="text-3xl font-bold">Connect Meta Ads</h1>
             <p className="text-gray-400">Sync your Facebook and Instagram ad accounts instantly.</p>
-            <button onClick={handleNext} className="mt-8 bg-[#1877F2] text-white font-semibold py-3 px-8 rounded-xl hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 mx-auto">
+            <button onClick={() => handleNextWithData({})} className="mt-8 bg-[#1877F2] text-white font-semibold py-3 px-8 rounded-xl hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 mx-auto">
               Authorize Meta OAuth
             </button>
-            <button onClick={handleNext} className="text-sm text-gray-500 hover:text-white transition-colors mt-4 block mx-auto">Skip for now</button>
+            <button onClick={() => handleNextWithData({})} className="text-sm text-gray-500 hover:text-white transition-colors mt-4 block mx-auto">Skip for now</button>
           </div>
         )}
 
@@ -84,7 +151,16 @@ export default function OnboardingPage() {
             <p className="text-gray-400">We optimize AI algorithms based on your industry.</p>
             <div className="grid grid-cols-2 gap-4 mt-8 text-left">
               {['B2B SaaS', 'E-commerce', 'Local Service', 'Agency'].map((type) => (
-                <button key={type} onClick={handleNext} className="p-4 border border-white/10 rounded-xl bg-black/40 hover:border-purple-500 hover:bg-purple-900/20 transition-colors flex items-center gap-3 group">
+                <button 
+                  key={type} 
+                  onClick={() => {
+                    setSelectedIndustry(type);
+                    handleNextWithData({ industry: type });
+                  }} 
+                  className={`p-4 border rounded-xl bg-black/40 hover:border-purple-500 hover:bg-purple-900/20 transition-colors flex items-center gap-3 group ${
+                    selectedIndustry === type ? 'border-purple-500 bg-purple-900/20' : 'border-white/10'
+                  }`}
+                >
                   <Building className="text-gray-500 group-hover:text-purple-400" />
                   <span className="font-medium text-gray-300 group-hover:text-white">{type}</span>
                 </button>
@@ -100,7 +176,17 @@ export default function OnboardingPage() {
             <p className="text-gray-400">What metric matters most to your business?</p>
             <div className="grid grid-cols-1 gap-4 mt-8 text-left max-w-md mx-auto">
               {['Maximize Lead Volume (CPA)', 'Maximize Revenue (ROAS)', 'Brand Awareness (CPM)'].map((goal) => (
-                <button key={goal} onClick={handleNext} className="p-4 border border-white/10 rounded-xl bg-black/40 hover:border-purple-500 hover:bg-purple-900/20 transition-colors flex items-center gap-3 group">
+                <button 
+                  key={goal} 
+                  onClick={() => {
+                    const nextGoals = [goal];
+                    setSelectedGoals(nextGoals);
+                    handleNextWithData({ goals: nextGoals });
+                  }} 
+                  className={`p-4 border rounded-xl bg-black/40 hover:border-purple-500 hover:bg-purple-900/20 transition-colors flex items-center gap-3 group ${
+                    selectedGoals.includes(goal) ? 'border-purple-500 bg-purple-900/20' : 'border-white/10'
+                  }`}
+                >
                   <Target className="text-gray-500 group-hover:text-purple-400" />
                   <span className="font-medium text-gray-300 group-hover:text-white">{goal}</span>
                 </button>

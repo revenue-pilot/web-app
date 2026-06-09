@@ -1,18 +1,25 @@
-import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { QueueService } from './queue.service';
 
 @Injectable()
-export class JobsService {
+export class JobsService implements OnModuleInit {
   private readonly logger = new Logger(JobsService.name);
 
+  private email: EmailService;
+  private queueService: QueueService;
+
   constructor(
+    private moduleRef: ModuleRef,
     private prisma: PrismaService,
-    private email: EmailService,
-    @Inject(forwardRef(() => QueueService))
-    private queueService: QueueService,
   ) {}
+
+  onModuleInit() {
+    this.email = this.moduleRef.get(EmailService, { strict: false });
+    this.queueService = this.moduleRef.get(QueueService, { strict: false });
+  }
 
   async runCheckTrialExpiriesTask() {
     this.logger.log('Running trial expiry task...');

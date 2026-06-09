@@ -5,19 +5,18 @@ interface RequestOptions extends RequestInit {
   headers?: Record<string, string>;
 }
 
-// Helper to get auth headers - retrieves user email from localStorage
+// Helper to get auth headers - retrieves access_token from localStorage
 function getAuthHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json"
   };
 
-  // Get user email from localStorage (set during login)
-  const userEmail = typeof window !== 'undefined' 
-    ? localStorage.getItem("user_email") || "guest@revenuepilot.com"
-    : "guest@revenuepilot.com";
+  const accessToken = typeof window !== 'undefined' 
+    ? localStorage.getItem("access_token")
+    : null;
 
-  if (userEmail) {
-    headers["x-user-email"] = userEmail;
+  if (accessToken) {
+    headers["Authorization"] = `Bearer ${accessToken}`;
   }
 
   return headers;
@@ -47,6 +46,23 @@ export async function apiRequest(
   }
 
   return response.json();
+}
+
+// Auth
+export async function login(data: any) {
+  return apiRequest("/api/auth/login", { method: "POST", body: JSON.stringify(data) });
+}
+export async function signup(data: any) {
+  return apiRequest("/api/auth/signup", { method: "POST", body: JSON.stringify(data) });
+}
+export async function verifyEmail(token: string) {
+  return apiRequest("/api/auth/verify-email", { method: "POST", body: JSON.stringify({ token }) });
+}
+export async function forgotPassword(email: string) {
+  return apiRequest("/api/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) });
+}
+export async function resetPassword(data: any) {
+  return apiRequest("/api/auth/reset-password", { method: "POST", body: JSON.stringify(data) });
 }
 
 // Analytics & Dashboard
@@ -250,14 +266,14 @@ export async function generateCreativeRatios(data: any) {
 
 // Reports
 export async function generateReport(data: any) {
-  return apiRequest("/api/reports/generate", {
+  return apiRequest("/api/v1/reports", {
     method: "POST",
     body: JSON.stringify(data)
   });
 }
 
 export async function downloadReport(id: string) {
-  return apiRequest(`/api/reports/download/${id}`);
+  return apiRequest(`/api/v1/reports/download/${id}`);
 }
 
 // Workspaces
@@ -286,7 +302,7 @@ export async function connectIntegration(platform: string, credentials: any) {
 
 // Reports - Get list
 export async function getReports() {
-  return apiRequest("/api/reports");
+  return apiRequest("/api/v1/reports");
 }
 
 // Marketplace Apps
@@ -335,3 +351,13 @@ export async function deleteAutomation(id: string) {
 export async function getSecuritySettings() {
   return apiRequest("/api/user/security");
 }
+
+const apiClient = {
+  get: (endpoint: string, options?: RequestOptions) => apiRequest(endpoint, { ...options, method: 'GET' }),
+  post: (endpoint: string, data?: any, options?: RequestOptions) => apiRequest(endpoint, { ...options, method: 'POST', body: data ? JSON.stringify(data) : undefined }),
+  put: (endpoint: string, data?: any, options?: RequestOptions) => apiRequest(endpoint, { ...options, method: 'PUT', body: data ? JSON.stringify(data) : undefined }),
+  patch: (endpoint: string, data?: any, options?: RequestOptions) => apiRequest(endpoint, { ...options, method: 'PATCH', body: data ? JSON.stringify(data) : undefined }),
+  delete: (endpoint: string, options?: RequestOptions) => apiRequest(endpoint, { ...options, method: 'DELETE' }),
+};
+
+export default apiClient;

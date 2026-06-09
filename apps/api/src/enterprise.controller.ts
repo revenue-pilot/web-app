@@ -27,7 +27,6 @@ function verifyPassword(password: string, storedHash: string): boolean {
 @UseGuards(SubscriptionGuard)
 export class EnterpriseController {
   private readonly logger = new Logger(EnterpriseController.name);
-  private mockReports = new Map<string, any>();
 
   constructor(
     private prismaService: PrismaService,
@@ -46,106 +45,7 @@ export class EnterpriseController {
     }
   }
 
-  // Auth & Onboarding Login Handler
-  @Post('auth/login')
-  async login(@Body() body: { email: string; password?: string }) {
-    const email = body.email.trim().toLowerCase();
-    const password = body.password || '';
 
-    if (!this.prismaService.isConnected) {
-      return { success: false, message: 'Database unavailable. Please try again later.' };
-    }
-
-    if (this.prismaService.isConnected) {
-      let user = await this.prismaService.client.user.findUnique({
-        where: { email }
-      });
-
-      if (!user) {
-        // Register new user on first login
-        const org = await this.prismaService.client.organization.create({
-          data: {
-            name: `${email.split('@')[0]}'s Workspace`,
-            subscriptions: {
-              create: {
-                tier: email === 'admin@Revenuepilot.com' ? 'ENTERPRISE' : 'STARTER',
-                status: 'ACTIVE'
-              }
-            }
-          }
-        });
-        user = await this.prismaService.client.user.create({
-          data: {
-            email,
-            name: email.split('@')[0],
-            passwordHash: password ? hashPassword(password) : null,
-            role: email === 'admin@Revenuepilot.com' ? 'ADMIN' : 'CLIENT',
-            organizationId: org.id
-          }
-        });
-        // Dispatch Welcome Email
-        await this.emailService.sendWelcomeEmail(user.email, user.name || user.email.split('@')[0]);
-        return { success: true, user };
-      }
-
-      // If user exists, check credentials
-      if (user.passwordHash) {
-        if (!password || !verifyPassword(password, user.passwordHash)) {
-          return { success: false, message: 'Invalid credentials. Please verify your password.' };
-        }
-      } else if (password) {
-        // Set password hash if not set yet (OAuth migrate path)
-        user = await this.prismaService.client.user.update({
-          where: { id: user.id },
-          data: { passwordHash: hashPassword(password) }
-        });
-      }
-
-      return { success: true, user };
-    }
-  }
-
-  @Post('auth/register')
-  async register(@Body() body: { email: string; password?: string; name?: string }) {
-    const email = body.email.trim().toLowerCase();
-    const password = body.password || '';
-    const name = body.name || email.split('@')[0];
-
-    if (!this.prismaService.isConnected) {
-      return { success: false, message: 'Database unavailable. Please try again later.' };
-    }
-
-    if (this.prismaService.isConnected) {
-      const existing = await this.prismaService.client.user.findUnique({ where: { email } });
-      if (existing) {
-        return { success: false, message: 'User already exists.' };
-      }
-
-      const org = await this.prismaService.client.organization.create({
-        data: {
-          name: `${name}'s Workspace`,
-          subscriptions: {
-            create: {
-              tier: 'STARTER',
-              status: 'ACTIVE'
-            }
-          }
-        }
-      });
-      const user = await this.prismaService.client.user.create({
-        data: {
-          email,
-          name,
-          passwordHash: password ? hashPassword(password) : null,
-          role: 'CLIENT',
-          organizationId: org.id
-        }
-      });
-      // Dispatch Welcome Email
-      await this.emailService.sendWelcomeEmail(user.email, user.name || user.email.split('@')[0]);
-      return { success: true, user };
-    }
-  }
 
   @Post('auth/verify-email')
   async verifyEmail(@Body() body: { token: string }) {
@@ -254,61 +154,6 @@ export class EnterpriseController {
     };
   }
 
-  @Post('auth/social-sync')
-  async socialSync(@Body() body: { email: string; name?: string; provider?: string }) {
-    const email = body.email.trim().toLowerCase();
-    const name = body.name || email.split('@')[0];
-    this.logger.log(`OAuth Social login sync callback requested from provider: ${body.provider || 'Google'} for ${email}`);
-
-    if (!this.prismaService.isConnected) {
-      return { success: false, message: 'Database unavailable. Please try again later.' };
-    }
-
-    let userPayload: any;
-    if (this.prismaService.isConnected) {
-      let user = await this.prismaService.client.user.findUnique({
-        where: { email },
-        include: { organization: true }
-      });
-
-      if (!user) {
-        const org = await this.prismaService.client.organization.create({
-          data: {
-            name: `${name}'s Workspace`,
-            subscriptions: {
-              create: {
-                tier: 'STARTER',
-                status: 'ACTIVE'
-              }
-            }
-          }
-        });
-        user = await this.prismaService.client.user.create({
-          data: {
-            email,
-            name,
-            role: 'CLIENT',
-            organizationId: org.id
-          },
-          include: { organization: true }
-        });
-        await this.emailService.sendWelcomeEmail(email, name);
-      }
-
-      userPayload = {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role
-      };
-    }
-
-    return {
-      success: true,
-      user: userPayload,
-      message: 'Social login synchronized successfully.'
-    };
-  }
 
   // Workspaces (Orbit Workspaces)
   @Get('workspaces')
@@ -828,7 +673,8 @@ export class EnterpriseController {
         }
         await this.prismaService.client.campaign.create({
           data: {
-            adAccountId: account.id,
+            adAccount: { connect: { id: account.id } },
+            organization: { connect: { id: user.organizationId } },
             name: body.campaignName || 'Campaign Studio Live',
             status: 'ACTIVE'
           }
@@ -1080,10 +926,10 @@ export class EnterpriseController {
     await this.prismaService.client.auditLog.create({
       data: {
         userId: user.id,
-        action: "Password Changed",
+        action: "UPDATE",
         resource: "UserCredentials",
         details: "User updated account credentials"
-      }
+      } as any
     });
     return { success: true };
   }
@@ -1091,7 +937,7 @@ export class EnterpriseController {
   @Post('user/profile/2fa/setup')
   async setup2Fa(@Req() req: Request) {
     const email = this.getUserEmail(req);
-    const secret = "GP" + Math.random().toString(36).substring(2, 10).toUpperCase();
+    const secret = "GP" + crypto.randomBytes(5).toString('hex').toUpperCase();
     const qrCode = `otpauth://totp/RevenuePilot:${email}?secret=${secret}&issuer=RevenuePilot`;
     return { success: true, secret, qrCode };
   }
@@ -1103,7 +949,7 @@ export class EnterpriseController {
       return { success: false, message: "Invalid verification code. Enter a 6-digit authenticator code." };
     }
     const recoveryCodesList = Array.from({ length: 8 }, () => 
-      Math.floor(Math.random() * 100000000).toString(16).toUpperCase().padStart(8, '0')
+      crypto.randomBytes(4).toString('hex').toUpperCase()
     );
     const recoveryCodes = recoveryCodesList.join(", ");
 
@@ -1189,7 +1035,7 @@ export class EnterpriseController {
   @Post('user/api-keys')
   async createApiKey(@Req() req: Request, @Body() body: { name: string }) {
     const email = this.getUserEmail(req);
-    const rawKey = "sk_live_" + Math.random().toString(36).substring(2, 18) + Math.random().toString(36).substring(2, 18);
+    const rawKey = "sk_live_" + crypto.randomBytes(24).toString('hex').substring(0, 32);
     
     const user = await this.prismaService.client.user.findUnique({ where: { email } });
     if (!user) return { success: false };
@@ -1281,7 +1127,7 @@ export class EnterpriseController {
           name: reportName,
           schedule: 'ON_DEMAND',
           url: `/api/reports/download/temp`
-        }
+        } as any
       });
 
       const updatedReport = await this.prismaService.client.report.update({

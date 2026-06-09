@@ -1,17 +1,18 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { JobsService } from './jobs.service';
 import { QueueService } from './queue.service';
-import { EmailService } from '../email/email.service';
+import { EmailModule } from '../email/email.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AutomationsModule } from '../automations/automations.module';
+import { IntegrationsModule } from '../integrations/integrations.module';
+import { WebhooksModule } from '../webhooks/webhooks.module';
 
 @Module({
-  imports: [PrismaModule, AutomationsModule],
+  imports: [PrismaModule, AutomationsModule, IntegrationsModule],
   providers: [
     JobsService,
     QueueService,
-    EmailService,
   ],
-  exports: [JobsService, QueueService, EmailService],
+  exports: [JobsService, QueueService],
 })
 export class JobsModule {}

@@ -1,93 +1,75 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class StorageService {
   private readonly logger = new Logger(StorageService.name);
-  private s3: S3Client | null = null;
-  private bucketName = process.env.AWS_BUCKET_NAME || 'Revenuepilot-production-storage';
+  private storagePath: string;
 
   constructor() {
-    const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
-    const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
-    const region = process.env.AWS_REGION || 'us-east-1';
+    this.storagePath = process.env.STORAGE_PATH || path.join(process.cwd(), 'uploads');
+    this.initializeStorageDirectory();
+  }
 
-    if (accessKeyId && secretAccessKey) {
-      this.s3 = new S3Client({
-        credentials: {
-          accessKeyId,
-          secretAccessKey,
-        },
-        region,
-      });
-    } else {
-      this.logger.warn('AWS S3 credentials (AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY) missing. Running in local simulation mode.');
+  private async initializeStorageDirectory() {
+    try {
+      await fs.mkdir(this.storagePath, { recursive: true });
+      this.logger.log(`Storage directory initialized at: ${this.storagePath}`);
+    } catch (e) {
+      this.logger.error(`Failed to initialize storage directory: ${e.message}`);
     }
   }
 
   async uploadFile(key: string, body: Buffer, contentType: string): Promise<string> {
-    if (!this.s3) {
-      this.logger.log(`[Simulated Upload] Key: ${key} | Size: ${body.length} bytes | Type: ${contentType}`);
-      // return a simulated local file URL
-      return `/api/storage/file/${key}`;
-    }
-
     try {
-      const command = new PutObjectCommand({
-        Bucket: this.bucketName,
-        Key: key,
-        Body: body,
-        ContentType: contentType,
-      });
+      const parsedPath = path.parse(key);
+      const uuidFileName = `${parsedPath.name}_${crypto.randomUUID()}${parsedPath.ext}`;
+      
+      let relativeDir = parsedPath.dir;
+      if (!relativeDir) {
+        if (contentType.includes('pdf') || contentType.includes('excel') || contentType.includes('csv')) {
+          relativeDir = 'reports';
+        } else {
+          relativeDir = 'general';
+        }
+      }
 
-      await this.s3.send(command);
-      this.logger.log(`S3 File uploaded successfully: ${key}`);
-      return `https://${this.bucketName}.s3.amazonaws.com/${key}`;
+      const absoluteDir = path.join(this.storagePath, relativeDir);
+      await fs.mkdir(absoluteDir, { recursive: true });
+
+      const absoluteFilePath = path.join(absoluteDir, uuidFileName);
+      await fs.writeFile(absoluteFilePath, body);
+
+      const downloadUrl = `/api/storage/file/${relativeDir}/${uuidFileName}`;
+      this.logger.log(`File saved locally: ${absoluteFilePath}`);
+      return downloadUrl;
     } catch (e) {
-      this.logger.error(`Failed to upload file to S3 (${key}): ${e.message}`);
+      this.logger.error(`Failed to save file locally (${key}): ${e.message}`);
       throw e;
     }
   }
 
   async deleteFile(key: string): Promise<boolean> {
-    if (!this.s3) {
-      this.logger.log(`[Simulated Delete] Key: ${key}`);
-      return true;
-    }
-
     try {
-      const command = new DeleteObjectCommand({
-        Bucket: this.bucketName,
-        Key: key,
-      });
-
-      await this.s3.send(command);
-      this.logger.log(`S3 File deleted successfully: ${key}`);
+      const absoluteFilePath = path.join(this.storagePath, key);
+      await fs.unlink(absoluteFilePath);
+      this.logger.log(`File deleted locally: ${absoluteFilePath}`);
       return true;
     } catch (e) {
-      this.logger.error(`Failed to delete file from S3 (${key}): ${e.message}`);
+      this.logger.error(`Failed to delete file locally (${key}): ${e.message}`);
       return false;
     }
   }
 
   async getPresignedDownloadUrl(key: string, expiresInSeconds = 3600): Promise<string> {
-    if (!this.s3) {
-      this.logger.log(`[Simulated Presigned URL] Key: ${key}`);
-      return `/api/storage/file/${key}?token=simulated_presigned_url_token`;
-    }
+    // For local storage, we just return the static file URL or a streaming endpoint
+    return `/api/storage/file/${key}`;
+  }
 
-    try {
-      const command = new GetObjectCommand({
-        Bucket: this.bucketName,
-        Key: key,
-      });
-
-      const url = await getSignedUrl(this.s3, command, { expiresIn: expiresInSeconds });
-      return url;
-    } catch (e) {
-      this.logger.error(`Failed to generate presigned download URL for S3 (${key}): ${e.message}`);
-      throw e;
-    }
+  async getFileBuffer(key: string): Promise<Buffer> {
+    const absoluteFilePath = path.join(this.storagePath, key);
+    return fs.readFile(absoluteFilePath);
   }
 }

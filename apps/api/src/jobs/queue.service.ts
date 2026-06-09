@@ -1,10 +1,13 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { Queue, Worker, Job } from 'bullmq';
 import Redis from 'ioredis';
 import { JobsService } from './jobs.service';
 import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AutomationsService } from '../automations/automations.service';
+import { IntegrationsService } from '../integrations/integrations.service';
+import { WebhooksService } from '../webhooks/webhooks.service';
 
 @Injectable()
 export class QueueService implements OnModuleInit, OnModuleDestroy {
@@ -16,15 +19,22 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
   private fallbackActivated = false;
   private fallbackIntervals: NodeJS.Timeout[] = [];
 
+  private jobsService: JobsService;
+  private emailService: EmailService;
+  private webhooksService: WebhooksService;
+
   constructor(
-    @Inject(forwardRef(() => JobsService))
-    private jobsService: JobsService,
-    private emailService: EmailService,
+    private moduleRef: ModuleRef,
     private prisma: PrismaService,
     private automationsService: AutomationsService,
+    private integrationsService: IntegrationsService,
   ) {}
 
   async onModuleInit() {
+    this.jobsService = this.moduleRef.get(JobsService, { strict: false });
+    this.emailService = this.moduleRef.get(EmailService, { strict: false });
+    this.webhooksService = this.moduleRef.get(WebhooksService, { strict: false });
+
     const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
     this.logger.log(`QueueService initializing... target REDIS_URL: ${redisUrl}`);
 
@@ -138,6 +148,19 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
+   * Queue a webhook payload
+   */
+  async queueWebhook(endpoint: any, eventType: string, payload: any) {
+    if (this.isActive()) {
+      this.logger.log(`Queueing webhook for ${endpoint.url} via BullMQ...`);
+      await this.queue!.add('fireWebhook', { endpoint, eventType, payload });
+    } else {
+      this.logger.warn(`Redis offline. Firing webhook inline (Emergency fallback) to ${endpoint.url}`);
+      await this.webhooksService.fireWebhook(endpoint, eventType, payload);
+    }
+  }
+
+  /**
    * Queue AI telemetry and cost log recording
    */
   async queueAiLog(email: string, action: string, provider: string, tokens: number, cost: number) {
@@ -151,6 +174,28 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
+   * Queue Automation Rule execution
+   */
+  async queueAutomationRule(ruleId: string, context?: any) {
+    if (this.isActive()) {
+      return await this.queue!.add('executeRule', { ruleId, context });
+    } else {
+      this.logger.warn(`Redis offline. Cannot execute rule ${ruleId}`);
+    }
+  }
+
+  /**
+   * Queue Report Generation
+   */
+  async queueReportGeneration(reportId: string, type: string) {
+    if (this.isActive()) {
+      return await this.queue!.add('generateReport', { reportId, type });
+    } else {
+      this.logger.warn(`Redis offline. Cannot generate report ${reportId}`);
+    }
+  }
+
+  /**
    * Setup worker to process items
    */
   private initializeWorker() {
@@ -159,6 +204,7 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
       async (job: Job) => {
         this.logger.log(`Worker processing job ${job.id} of type: ${job.name}`);
         switch (job.name) {
+          // Existing core jobs
           case 'checkTrialExpiries':
             await this.jobsService.runCheckTrialExpiriesTask();
             break;
@@ -172,9 +218,58 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
             const { to, subject, html } = job.data;
             await this.emailService.sendEmailDirect(to, subject, html);
             break;
+          case 'fireWebhook':
+            const { endpoint, eventType, payload } = job.data;
+            await this.webhooksService.fireWebhook(endpoint, eventType, payload);
+            break;
           case 'logAiUsage':
             const { email, action, provider, tokens, cost } = job.data;
             await this.writeAiUsageInline(email, action, provider, tokens, cost);
+            break;
+          // Provider sync jobs
+          case 'syncGoogleCampaigns':
+            await this.integrationsService.handleGoogleCampaignSync(job.data);
+            break;
+          case 'syncGoogleMetrics':
+            await this.integrationsService.handleGoogleMetricsSync(job.data);
+            break;
+          case 'syncMetaCampaigns':
+            await this.integrationsService.handleMetaCampaignSync(job.data);
+            break;
+          case 'syncMetaMetrics':
+            await this.integrationsService.handleMetaMetricsSync(job.data);
+            break;
+          // Bulk operation jobs
+          case 'bulkCreateCampaigns':
+            await this.integrationsService.handleBulkCreateCampaigns(job.data);
+            break;
+          case 'bulkUpdateCampaigns':
+            await this.integrationsService.handleBulkUpdateCampaigns(job.data);
+            break;
+          case 'bulkDeleteCampaigns':
+            await this.integrationsService.handleBulkDeleteCampaigns(job.data);
+            break;
+          // Health score calculation job
+          case 'calculateHealthScores':
+            await this.integrationsService.handleHealthScoreCalculation(job.data);
+            break;
+          // Automations
+          case 'executeRule':
+            // we will need automationExecutionService for this, but to avoid circular deps, let's lazy load
+            const automationExecutionService = this.moduleRef.get('AutomationExecutionService', { strict: false });
+            if (automationExecutionService) {
+              await automationExecutionService.executeRule(job.data.ruleId, job.data.context);
+            }
+            break;
+          case 'pollTriggers':
+            await this.automationsService.pollTriggers();
+            break;
+          // Reports
+          case 'generateReport':
+            const reportsService = this.moduleRef.get('ReportsService', { strict: false });
+            if (reportsService) {
+              await reportsService.processReportGeneration(job);
+            }
             break;
           default:
             this.logger.warn(`Worker received unknown job name: ${job.name}`);
@@ -234,6 +329,17 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
       {
         repeat: {
           pattern: '* * * * *',
+        },
+      },
+    );
+
+    // pollTriggers: every 5 minutes
+    await this.queue.add(
+      'pollTriggers',
+      {},
+      {
+        repeat: {
+          pattern: '*/5 * * * *',
         },
       },
     );
@@ -301,10 +407,14 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
         if (user) {
           await this.prisma.client.auditLog.create({
             data: {
+              organizationId: user.organizationId,
+              entity: 'OTHER',
+              entityId: user.id,
+              action: 'UPDATE',
+              performedBy: user.email || 'system',
               userId: user.id,
-              action: `AI_${action.toUpperCase()}`,
-              resource: `AI_${provider.toUpperCase()}`,
-              details: JSON.stringify({
+              detailsJson: JSON.stringify({
+                aiAction: action,
                 tokensUsed: tokens,
                 costEstimate: `$${cost.toFixed(6)}`,
                 provider,

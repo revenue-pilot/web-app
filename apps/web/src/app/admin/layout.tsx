@@ -40,30 +40,30 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     {
       title: "Core Capabilities",
       items: [
-        { href: "/admin", icon: <LayoutDashboard size={16} />, label: "Command Core" },
-        { href: "/admin/revenue", icon: <CreditCard size={16} />, label: "Revenue Nexus" },
-        { href: "/admin/clients", icon: <UserCheck size={16} />, label: "Client Universe" },
-        { href: "/admin/users", icon: <Users size={16} />, label: "Account Nexus" },
-        { href: "/admin/campaigns", icon: <Tv size={16} />, label: "Campaign Observatory" }
+        { href: "/admin", icon: <LayoutDashboard size={16} />, label: "Dashboard" },
+        { href: "/admin/revenue", icon: <CreditCard size={16} />, label: "Revenue" },
+        { href: "/admin/clients", icon: <UserCheck size={16} />, label: "Clients" },
+        { href: "/admin/users", icon: <Users size={16} />, label: "Users" },
+        { href: "/admin/campaigns", icon: <Tv size={16} />, label: "Campaigns" }
       ]
     },
     {
       title: "Operational Grids",
       items: [
-        { href: "/admin/health", icon: <Database size={16} />, label: "Platform Pulse" },
-        { href: "/admin/ai-control", icon: <BrainCircuit size={16} />, label: "AI Control Grid" },
-        { href: "/admin/integrations", icon: <Link2 size={16} />, label: "Integration Command" },
-        { href: "/admin/subscriptions", icon: <Sliders size={16} />, label: "Subscription Command" },
-        { href: "/admin/feature-control", icon: <Key size={16} />, label: "Feature Control" }
+        { href: "/admin/health", icon: <Database size={16} />, label: "Platform Health" },
+        { href: "/admin/ai-control", icon: <BrainCircuit size={16} />, label: "AI Control" },
+        { href: "/admin/integrations", icon: <Link2 size={16} />, label: "Integrations" },
+        { href: "/admin/subscriptions", icon: <Sliders size={16} />, label: "Subscriptions" },
+        { href: "/admin/feature-control", icon: <Key size={16} />, label: "Feature Flags" }
       ]
     },
     {
       title: "Missions & Threats",
       items: [
-        { href: "/admin/support", icon: <HelpCircle size={16} />, label: "Support Mission Control" },
-        { href: "/admin/fortress", icon: <ShieldCheck size={16} />, label: "Fortress (Security)" },
-        { href: "/admin/audit", icon: <History size={16} />, label: "Audit Matrix" },
-        { href: "/admin/Revenue-lab", icon: <LineChart size={16} />, label: "Revenue Lab" }
+        { href: "/admin/support", icon: <HelpCircle size={16} />, label: "Support" },
+        { href: "/admin/fortress", icon: <ShieldCheck size={16} />, label: "Security" },
+        { href: "/admin/audit", icon: <History size={16} />, label: "Audit Logs" },
+        { href: "/admin/Revenue-lab", icon: <LineChart size={16} />, label: "Analytics" }
       ]
     }
   ];
