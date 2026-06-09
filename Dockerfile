@@ -5,6 +5,12 @@ COPY package*.json ./
 COPY apps/api/package*.json ./apps/api/
 COPY apps/web/package*.json ./apps/web/
 COPY packages/database/package*.json ./packages/database/
+
+# Install Chromium for Puppeteer and skip its own download
+RUN apk add --no-cache chromium
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
 RUN npm ci
 
 # Stage 2: Generate database client & build
