@@ -10,7 +10,7 @@ import { CampaignsModule } from './campaigns/campaigns.module';
 import { AiModule } from './ai/ai.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { AutomationsModule } from './automations/automations.module';
-import { BillingService } from './billing/billing.service';
+import { BillingModule } from './billing/billing.module';
 import { EmailModule } from './email/email.module';
 import { StorageService } from './storage/storage.service';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -67,12 +67,11 @@ import { SubscriptionGuard } from './subscription.guard';
             retryStrategy: process.env.NODE_ENV === 'test' ? () => null : undefined,
           },
     }),
-    PrismaModule, TrackingModule, CampaignsModule, AiModule, IntegrationsModule, AutomationsModule, JobsModule, AuthModule, UsersModule, SecurityModule, OrganizationsModule, OnboardingModule, CrmModule, ReportsModule, MarketplaceModule, WebhooksModule, HealthModule, AdminModule, EmailModule
+    PrismaModule, TrackingModule, CampaignsModule, AiModule, IntegrationsModule, AutomationsModule, JobsModule, AuthModule, UsersModule, SecurityModule, OrganizationsModule, OnboardingModule, CrmModule, ReportsModule, MarketplaceModule, WebhooksModule, HealthModule, AdminModule, EmailModule, BillingModule
   ],
   controllers: [AppController, EnterpriseController],
   providers: [
     AppService,
-    BillingService,
     StorageService,
     SubscriptionGuard,
     {

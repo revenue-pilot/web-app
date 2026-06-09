@@ -13,11 +13,7 @@ interface FeatureFlag {
 
 export default function AdminFeatureControlPage() {
   const [activeNotification, setActiveNotification] = useState("");
-  const [flags, setFlags] = useState<FeatureFlag[]>([
-    { id: "ff_1", name: "Creative Vault V2", key: "creative-vault-v2", enabled: true, rollout: 50, tier: "Beta" },
-    { id: "ff_2", name: "RatioForge Vision Cropper", key: "ratioforge-vision", enabled: true, rollout: 100, tier: "General Availability" },
-    { id: "ff_3", name: "Automatic Budget Redistributor", key: "auto-budget", enabled: false, rollout: 0, tier: "Experimental" }
-  ]);
+  const [flags, setFlags] = useState<FeatureFlag[]>([]);
 
   const [newFlagName, setNewFlagName] = useState("");
   const [newFlagKey, setNewFlagKey] = useState("");
@@ -96,7 +92,9 @@ export default function AdminFeatureControlPage() {
           </h3>
 
           <div className="space-y-3">
-            {flags.map((f) => (
+            {flags.length === 0 ? (
+              <p className="text-xs text-zinc-500 text-center py-8 font-bold">No feature flags configured.</p>
+            ) : flags.map((f) => (
               <div 
                 key={f.id}
                 className="p-4 bg-[#0A0F1D] border border-[#1C283F] rounded-xl text-xs font-semibold text-zinc-400 space-y-3"

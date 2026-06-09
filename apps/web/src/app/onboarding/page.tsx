@@ -21,7 +21,29 @@ export default function OnboardingPage() {
           setCompanyName(res.name || "");
           setSelectedIndustry(res.industry || "");
           setSelectedGoals(res.goals || []);
-          setStep(res.onboardingStep || 1);
+          
+          const query = new URLSearchParams(window.location.search);
+          const googleCode = query.get("googleCode");
+          const metaCode = query.get("metaCode");
+
+          let currentStep = res.onboardingStep || 1;
+
+          if (googleCode) {
+            currentStep = 4; // Advance past Google step
+            apiClient.post("/api/v1/integrations/google-ads/callback", { code: googleCode })
+              .catch(e => console.error("Failed to connect Google Ads", e));
+            // Remove from URL
+            window.history.replaceState({}, document.title, "/onboarding");
+            apiClient.put("/api/onboarding/step", { onboardingStep: currentStep });
+          } else if (metaCode) {
+            currentStep = 5; // Advance past Meta step
+            apiClient.post("/api/v1/integrations/meta-ads/callback", { code: metaCode })
+              .catch(e => console.error("Failed to connect Meta Ads", e));
+            window.history.replaceState({}, document.title, "/onboarding");
+            apiClient.put("/api/onboarding/step", { onboardingStep: currentStep });
+          }
+
+          setStep(currentStep);
         }
         setLoading(false);
       })
@@ -36,13 +58,13 @@ export default function OnboardingPage() {
       let nextStep = step + 1;
       const payload: any = { onboardingStep: nextStep, ...data };
 
-      if (step === 6 || nextStep > 6) {
+      if (step === 7 || nextStep > 7) {
         payload.isOnboarded = true;
       }
 
       await apiClient.put("/api/onboarding/step", payload);
 
-      if (step < 6) {
+      if (step < 7) {
         setStep(nextStep);
       } else {
         router.push('/dashboard');
@@ -55,9 +77,9 @@ export default function OnboardingPage() {
   const handleNext = () => {
     if (step === 1) {
       handleNextWithData({ name: companyName });
-    } else if (step === 4) {
-      handleNextWithData({ industry: selectedIndustry });
     } else if (step === 5) {
+      handleNextWithData({ industry: selectedIndustry });
+    } else if (step === 6) {
       handleNextWithData({ goals: selectedGoals });
     } else {
       handleNextWithData({});
@@ -66,7 +88,9 @@ export default function OnboardingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-black to-black">
+      <div className="min-h-screen bg-[#F4F6F5] text-gray-900 flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-500/10 blur-[120px]" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-600/10 blur-[120px]" />
         <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
         <p className="text-zinc-400 text-sm mt-4">Loading your setup progress...</p>
       </div>
@@ -74,8 +98,10 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-black to-black">
-      <div className="w-full max-w-2xl bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-10 shadow-2xl">
+    <div className="min-h-screen bg-[#F4F6F5] text-gray-900 flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-500/10 blur-[120px]" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-600/10 blur-[120px]" />
+      <div className="z-10 w-full max-w-2xl bg-white border border-gray-200/80 rounded-3xl p-10 shadow-xl">
         
         {/* Progress Bar */}
         <div className="flex justify-between items-center mb-12 relative">
@@ -85,11 +111,11 @@ export default function OnboardingPage() {
             style={{ width: `${((step - 1) / 5) * 100}%` }}
           ></div>
           
-          {[1, 2, 3, 4, 5, 6].map((s) => (
-            <div key={s} className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors duration-500 ${
-              step >= s ? 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.5)]' : 'bg-black border border-white/20 text-gray-500'
+          {[1, 2, 3, 4, 5, 6, 7].map((s) => (
+            <div key={s} className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-colors duration-500 ${
+              step >= s ? 'bg-purple-500 text-gray-900 shadow-[0_0_15px_rgba(168,85,247,0.5)]' : 'bg-gray-100 border border-white/20 text-gray-500'
             }`}>
-              {step > s ? <CheckCircle2 size={20} /> : s}
+              {step > s ? <CheckCircle2 size={16} /> : s}
             </div>
           ))}
         </div>
@@ -98,15 +124,15 @@ export default function OnboardingPage() {
         {step === 1 && (
           <div className="animate-in fade-in zoom-in-95 duration-300 text-center space-y-6">
             <h1 className="text-3xl font-bold">Welcome to Revenue Pilot</h1>
-            <p className="text-gray-400">Let&apos;s set up your executive control center.</p>
+            <p className="text-gray-600">Let&apos;s set up your executive control center.</p>
             <div className="space-y-4 text-left mt-8">
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Company Name</label>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Company Name</label>
                 <input 
                   type="text" 
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  className="w-full bg-black/50 border border-white/10 rounded-xl py-3 px-4 focus:border-purple-500 focus:outline-none" 
+                  className="w-full bg-gray-100/50 border border-gray-200 rounded-xl py-3 px-4 focus:border-purple-500 focus:outline-none" 
                   placeholder="Acme Corp" 
                 />
               </div>
@@ -114,41 +140,116 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Step 2: Google Ads */}
+        {/* Step 2: Pricing */}
         {step === 2 && (
+          <div className="animate-in fade-in zoom-in-95 duration-300 text-center space-y-6 w-full">
+            <h1 className="text-3xl font-bold">Select Your Plan</h1>
+            <p className="text-gray-600">Choose the AI intelligence tier that fits your growth.</p>
+            <div className="grid grid-cols-3 gap-6 mt-8 text-left w-full">
+              {[
+                { name: 'Starter', price: 1, features: ['Basic AI', 'Up to ₹1L Spend'] },
+                { name: 'Professional', price: 4999, features: ['GPT-4o Mini', 'Up to ₹10L Spend', 'Automations'] },
+                { name: 'Enterprise', price: 15000, features: ['GPT-5 Access', 'Unlimited Spend', 'Dedicated Support'] }
+              ].map((plan) => (
+                <div key={plan.name} className="p-6 border border-gray-200 rounded-xl bg-gray-50 flex flex-col relative">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                  <div className="text-2xl font-bold text-purple-400 mb-6">₹{plan.price}/mo</div>
+                  <ul className="space-y-3 mb-8 flex-grow">
+                    {plan.features.map(f => (
+                      <li key={f} className="text-sm text-gray-300 flex items-center gap-2">
+                        <CheckCircle2 size={16} className="text-purple-500" /> {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <button 
+                    onClick={async () => {
+                      setLoading(true);
+                      try {
+                        const res = await apiClient.post("/api/onboarding/checkout", { plan: plan.name.toUpperCase(), amount: plan.price });
+                        if (res.orderId) {
+                           if (!(window as any).Razorpay) {
+                             await new Promise((resolve, reject) => {
+                               const script = document.createElement('script');
+                               script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+                               script.onload = resolve;
+                               script.onerror = reject;
+                               document.body.appendChild(script);
+                             });
+                           }
+                           const options = {
+                              key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_dummy",
+                              amount: res.amount,
+                              currency: res.currency,
+                              name: "RevenuePilot",
+                              description: `Subscription to ${plan.name}`,
+                              order_id: res.orderId,
+                              handler: function (response: any) {
+                                  // Success - proceed to next step
+                                  handleNextWithData({});
+                              },
+                              theme: { color: "#a855f7" }
+                           };
+                           const rzp = new (window as any).Razorpay(options);
+                           rzp.open();
+                        }
+                      } catch (e) {
+                        console.error(e);
+                      } finally {
+                        setLoading(false);
+                      }
+                    }} 
+                    className="w-full py-3 rounded-lg bg-white/10 hover:bg-purple-600 transition-colors text-gray-900 font-medium">
+                    Select {plan.name}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Google Ads */}
+        {step === 3 && (
           <div className="animate-in fade-in zoom-in-95 duration-300 text-center space-y-6">
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
               <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" className="w-8 h-8" alt="Google" />
             </div>
             <h1 className="text-3xl font-bold">Connect Google Ads</h1>
-            <p className="text-gray-400">One-click secure authorization to import your Search and PMax campaigns.</p>
-            <button onClick={() => handleNextWithData({})} className="mt-8 bg-white text-black font-semibold py-3 px-8 rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 mx-auto">
+            <p className="text-gray-600">One-click secure authorization to import your Search and PMax campaigns.</p>
+            <button onClick={async () => {
+              handleNextWithData({}); // Advance step in background
+              const res = await apiClient.get('/api/v1/integrations/google-ads/auth?state=onboarding');
+              window.location.href = res.url;
+            }} className="mt-8 bg-white text-black font-semibold py-3 px-8 rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 mx-auto">
               Authorize Google OAuth
             </button>
-            <button onClick={() => handleNextWithData({})} className="text-sm text-gray-500 hover:text-white transition-colors mt-4 block mx-auto">Skip for now</button>
+            <button onClick={() => handleNextWithData({})} className="text-sm text-gray-500 hover:text-gray-900 transition-colors mt-4 block mx-auto">Skip for now</button>
           </div>
         )}
 
-        {/* Step 3: Meta Ads */}
-        {step === 3 && (
+        {/* Step 4: Meta Ads */}
+        {step === 4 && (
           <div className="animate-in fade-in zoom-in-95 duration-300 text-center space-y-6">
-            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white font-bold text-3xl">
+            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-900 font-bold text-3xl">
               f
             </div>
             <h1 className="text-3xl font-bold">Connect Meta Ads</h1>
-            <p className="text-gray-400">Sync your Facebook and Instagram ad accounts instantly.</p>
-            <button onClick={() => handleNextWithData({})} className="mt-8 bg-[#1877F2] text-white font-semibold py-3 px-8 rounded-xl hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 mx-auto">
+            <p className="text-gray-600">Sync your Facebook and Instagram ad accounts instantly.</p>
+            <button onClick={async () => {
+              handleNextWithData({}); // Advance step in background
+              const res = await apiClient.get('/api/v1/integrations/meta-ads/auth?state=onboarding');
+              window.location.href = res.url;
+            }} className="mt-8 bg-[#1877F2] text-gray-900 font-semibold py-3 px-8 rounded-xl hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 mx-auto">
               Authorize Meta OAuth
             </button>
-            <button onClick={() => handleNextWithData({})} className="text-sm text-gray-500 hover:text-white transition-colors mt-4 block mx-auto">Skip for now</button>
+            <button onClick={() => handleNextWithData({})} className="text-sm text-gray-500 hover:text-gray-900 transition-colors mt-4 block mx-auto">Skip for now</button>
           </div>
         )}
 
-        {/* Step 4: Business Type */}
-        {step === 4 && (
+        {/* Step 5: Business Type */}
+        {step === 5 && (
           <div className="animate-in fade-in zoom-in-95 duration-300 text-center space-y-6">
             <h1 className="text-3xl font-bold">What&apos;s your business type?</h1>
-            <p className="text-gray-400">We optimize AI algorithms based on your industry.</p>
+            <p className="text-gray-600">We optimize AI algorithms based on your industry.</p>
             <div className="grid grid-cols-2 gap-4 mt-8 text-left">
               {['B2B SaaS', 'E-commerce', 'Local Service', 'Agency'].map((type) => (
                 <button 
@@ -157,8 +258,8 @@ export default function OnboardingPage() {
                     setSelectedIndustry(type);
                     handleNextWithData({ industry: type });
                   }} 
-                  className={`p-4 border rounded-xl bg-black/40 hover:border-purple-500 hover:bg-purple-900/20 transition-colors flex items-center gap-3 group ${
-                    selectedIndustry === type ? 'border-purple-500 bg-purple-900/20' : 'border-white/10'
+                  className={`p-4 border rounded-xl bg-black/40 hover:border-purple-500 hover:bg-purple-100 transition-colors flex items-center gap-3 group ${
+                    selectedIndustry === type ? 'border-purple-500 bg-purple-100' : 'border-white/10'
                   }`}
                 >
                   <Building className="text-gray-500 group-hover:text-purple-400" />
@@ -169,8 +270,8 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Step 5: Goals */}
-        {step === 5 && (
+        {/* Step 6: Goals */}
+        {step === 6 && (
           <div className="animate-in fade-in zoom-in-95 duration-300 text-center space-y-6">
             <h1 className="text-3xl font-bold">Define your primary goal</h1>
             <p className="text-gray-400">What metric matters most to your business?</p>
@@ -183,8 +284,8 @@ export default function OnboardingPage() {
                     setSelectedGoals(nextGoals);
                     handleNextWithData({ goals: nextGoals });
                   }} 
-                  className={`p-4 border rounded-xl bg-black/40 hover:border-purple-500 hover:bg-purple-900/20 transition-colors flex items-center gap-3 group ${
-                    selectedGoals.includes(goal) ? 'border-purple-500 bg-purple-900/20' : 'border-white/10'
+                  className={`p-4 border rounded-xl bg-black/40 hover:border-purple-500 hover:bg-purple-100 transition-colors flex items-center gap-3 group ${
+                    selectedGoals.includes(goal) ? 'border-purple-500 bg-purple-100' : 'border-white/10'
                   }`}
                 >
                   <Target className="text-gray-500 group-hover:text-purple-400" />
@@ -195,8 +296,8 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Step 6: Create Campaign */}
-        {step === 6 && (
+        {/* Step 7: Create Campaign */}
+        {step === 7 && (
           <div className="animate-in fade-in zoom-in-95 duration-300 text-center space-y-6">
             <div className="w-20 h-20 bg-purple-600/20 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-purple-500/30">
               <Zap className="w-10 h-10 text-purple-400" />
@@ -209,7 +310,7 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {step < 4 && step > 1 ? null : step < 6 && (
+        {step < 5 && step > 1 ? null : step < 7 && (
           <div className="mt-12 flex justify-end">
             <button onClick={handleNext} className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-2.5 rounded-lg font-medium transition-colors">
               Continue

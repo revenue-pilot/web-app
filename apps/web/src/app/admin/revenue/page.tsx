@@ -24,13 +24,7 @@ interface Coupon {
 
 export default function AdminRevenuePage() {
   // Mock payments store
-  const [payments, setPayments] = useState<PaymentLog[]>([
-    { id: "PAY-9831", client: "EcoMart India", email: "contact@ecomart.in", amount: 1999, status: "Paid", date: "2026-06-05", method: "Razorpay" },
-    { id: "PAY-9830", client: "FitLife Gyms", email: "billing@fitlifegyms.com", amount: 1999, status: "Paid", date: "2026-06-04", method: "Razorpay" },
-    { id: "PAY-9829", client: "Apex Logistics", email: "ops@apex.com", amount: 2499, status: "Failed", date: "2026-06-03", method: "Razorpay" },
-    { id: "PAY-9828", client: "UrbanStays Hotel", email: "concierge@urbanstays.com", amount: 1999, status: "Paid", date: "2026-06-01", method: "Razorpay" },
-    { id: "PAY-9827", client: "Solo Marketer", email: "mark@marketing.com", amount: 1199, status: "Refunded", date: "2026-05-28", method: "Razorpay" },
-  ]);
+  const [payments, setPayments] = useState<PaymentLog[]>([]);
 
   // Mock coupon store
   const [coupons, setCoupons] = useState<Coupon[]>([
@@ -128,7 +122,9 @@ export default function AdminRevenuePage() {
                 </tr>
               </thead>
               <tbody className="font-semibold text-zinc-300">
-                {payments.map((p) => (
+                {payments.length === 0 ? (
+                  <tr><td colSpan={4} className="py-4 text-center">No payment transactions found.</td></tr>
+                ) : payments.map((p) => (
                   <tr key={p.id} className="border-b border-[#1C283F] hover:bg-[#151D2F] transition-colors">
                     <td className="py-3">
                       <span className="font-bold text-white block">{p.client}</span>

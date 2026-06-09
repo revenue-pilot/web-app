@@ -19,12 +19,38 @@ export default function AdminUsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeNotification, setActiveNotification] = useState("");
 
-  const [users, setUsers] = useState<UserProfile[]>([
-    { id: "u_1", name: "Arjun Mehta", email: "arjun@Revenuepilot.com", organization: "Arjun Mehta Agency", plan: "Revenue", status: "Active", lastLogin: "2 mins ago" },
-    { id: "u_2", name: "Sonia Roy", email: "sonia@Revenuepilot.com", organization: "FitLife Gyms", plan: "Standard", status: "Active", lastLogin: "1 hr ago" },
-    { id: "u_3", name: "Karan Singh", email: "karan@Revenuepilot.com", organization: "UrbanStays Hotel", plan: "Premium", status: "Active", lastLogin: "3 days ago" },
-    { id: "u_4", name: "Billing Admin", email: "billing@apex.com", organization: "Apex Logistics", plan: "Premium", status: "Suspended", lastLogin: "30 days ago" }
-  ]);
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    async function fetchUsers() {
+      try {
+        const token = localStorage.getItem("token") || localStorage.getItem("auth_token");
+        const res = await fetch("/api/v1/admin/users", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          // Map backend User model to our frontend UserProfile
+          const mappedUsers = data.map((u: any) => ({
+            id: u.id,
+            name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Unknown',
+            email: u.email,
+            organization: u.organization?.name || 'No Organization',
+            plan: 'N/A', // Would need subscription link to determine plan
+            status: 'Active',
+            lastLogin: u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A',
+          }));
+          setUsers(mappedUsers);
+        }
+      } catch (err) {
+        console.error("Failed to fetch users", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchUsers();
+  }, []);
 
   const triggerNotification = (msg: string) => {
     setActiveNotification(msg);
@@ -111,7 +137,11 @@ export default function AdminUsersPage() {
               </tr>
             </thead>
             <tbody className="font-semibold text-zinc-300">
-              {filteredUsers.map((u) => (
+              {loading ? (
+                <tr><td colSpan={6} className="py-4 text-center">Loading users...</td></tr>
+              ) : filteredUsers.length === 0 ? (
+                <tr><td colSpan={6} className="py-4 text-center">No users found.</td></tr>
+              ) : filteredUsers.map((u) => (
                 <tr key={u.id} className="border-b border-[#1C283F] hover:bg-[#151D2F] transition-colors">
                   <td className="py-3">
                     <span className="font-bold text-white block">{u.name}</span>

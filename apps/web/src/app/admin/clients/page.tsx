@@ -23,60 +23,46 @@ export default function AdminClientsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClient, setSelectedClient] = useState<TenantClient | null>(null);
 
-  const [clients, setClients] = useState<TenantClient[]>([
-    { 
-      id: "client_1", 
-      name: "EcoMart India", 
-      owner: "Arjun Mehta", 
-      email: "contact@ecomart.in", 
-      plan: "Revenue", 
-      status: "Active", 
-      revenue: 1247376, 
-      adSpend: 1523170, 
-      joinedDate: "2025-10-15",
-      health: "Excellent",
-      healthDetails: { logins: "Daily (24h)", campaigns: "Active (24 live)", spend: "Steady", churn: "Low Risk" }
-    },
-    { 
-      id: "client_2", 
-      name: "FitLife Gyms", 
-      owner: "Sonia Roy", 
-      email: "billing@fitlifegyms.com", 
-      plan: "Standard", 
-      status: "Active", 
-      revenue: 613888, 
-      adSpend: 738200, 
-      joinedDate: "2025-12-01",
-      health: "Warning",
-      healthDetails: { logins: "Inactive 7d", campaigns: "4 Paused adsets", spend: "Decreased 20%", churn: "Medium Risk" }
-    },
-    { 
-      id: "client_3", 
-      name: "UrbanStays Hotel", 
-      owner: "Karan Singh", 
-      email: "concierge@urbanstays.com", 
-      plan: "Premium", 
-      status: "Active", 
-      revenue: 369852, 
-      adSpend: 195410, 
-      joinedDate: "2026-02-18",
-      health: "Healthy",
-      healthDetails: { logins: "Weekly", campaigns: "12 Live", spend: "Steady", churn: "Low Risk" }
-    },
-    { 
-      id: "client_4", 
-      name: "Apex Logistics", 
-      owner: "Delinquent Ops", 
-      email: "ops@apex.com", 
-      plan: "Premium", 
-      status: "Suspended", 
-      revenue: 2499, 
-      adSpend: 0, 
-      joinedDate: "2026-04-12",
-      health: "Critical",
-      healthDetails: { logins: "No logins 30d", campaigns: "No active campaigns", spend: "Zero spend", churn: "High Churn Risk" }
+  const [clients, setClients] = useState<TenantClient[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    async function fetchTenants() {
+      try {
+        const token = localStorage.getItem("token") || localStorage.getItem("auth_token");
+        const res = await fetch("/api/v1/admin/tenants", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const mapped = data.map((t: any) => ({
+            id: t.id,
+            name: t.name || 'Unnamed Org',
+            owner: 'Admin', // In reality, we would fetch the owner user
+            email: 'N/A',
+            plan: t.subscriptionTier || 'N/A',
+            status: 'Active',
+            revenue: 0,
+            adSpend: 0,
+            joinedDate: t.createdAt ? new Date(t.createdAt).toLocaleDateString() : 'N/A',
+            health: "Healthy",
+            healthDetails: {
+              logins: "Active",
+              campaigns: `${t._count?.Campaign || 0} Campaigns`,
+              spend: "Tracking",
+              churn: "Low"
+            }
+          }));
+          setClients(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to fetch tenants", err);
+      } finally {
+        setLoading(false);
+      }
     }
-  ]);
+    fetchTenants();
+  }, []);
 
   const handleToggleSuspend = (id: string) => {
     setClients(prev => prev.map(c => {
@@ -165,7 +151,11 @@ export default function AdminClientsPage() {
                 </tr>
               </thead>
               <tbody className="font-semibold text-zinc-300">
-                {filteredClients.map((c) => (
+                {loading ? (
+                  <tr><td colSpan={6} className="py-4 text-center">Loading clients...</td></tr>
+                ) : filteredClients.length === 0 ? (
+                  <tr><td colSpan={6} className="py-4 text-center">No clients found.</td></tr>
+                ) : filteredClients.map((c) => (
                   <tr 
                     key={c.id} 
                     onClick={() => setSelectedClient(c)}

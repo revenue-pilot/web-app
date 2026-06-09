@@ -98,6 +98,10 @@ export function useAnalytics() {
   return useFetch(() => api.getAnalyticsPulse(), []);
 }
 
+export function useAnalyticsPulseMatrix() {
+  return useFetch(() => api.getAnalyticsPulseMatrix(), []);
+}
+
 // Creatives Hook
 export function useCreatives() {
   return useFetch(() => api.getCreatives(), []);
@@ -162,6 +166,11 @@ export function useUpdateClient(id: string) {
 // Invite Team Member Hook
 export function useInviteTeamMember() {
   return useMutation((data: any) => api.inviteTeamMember(data));
+}
+
+// Update Team Member Role Hook
+export function useUpdateTeamMemberRole() {
+  return useMutation(({ id, role }: { id: string; role: string }) => api.updateTeamMemberRole(id, role));
 }
 
 // Update Profile Hook

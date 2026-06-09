@@ -11,10 +11,40 @@ import { Roles } from '../auth/roles.decorator';
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
+  @Get('dashboard')
+  @ApiOperation({ summary: 'Get complete dashboard statistics' })
+  async getDashboardStats() {
+    return this.adminService.getDashboardStats();
+  }
+
   @Get('revenue')
   @ApiOperation({ summary: 'Get global revenue metrics' })
   async getRevenueMetrics() {
     return this.adminService.getRevenueMetrics();
+  }
+
+  @Get('users')
+  @ApiOperation({ summary: 'Get all platform users' })
+  async getUsers() {
+    return this.adminService.getUsers();
+  }
+
+  @Get('campaigns')
+  @ApiOperation({ summary: 'Get global campaigns aggregate' })
+  async getCampaigns() {
+    return this.adminService.getCampaigns();
+  }
+
+  @Get('subscriptions')
+  @ApiOperation({ summary: 'Get all platform subscriptions' })
+  async getSubscriptions() {
+    return this.adminService.getSubscriptions();
+  }
+
+  @Get('integrations')
+  @ApiOperation({ summary: 'Get connected integration counts' })
+  async getIntegrations() {
+    return this.adminService.getIntegrations();
   }
 
   @Get('tenants')

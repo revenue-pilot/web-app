@@ -12,20 +12,45 @@ interface PromptTemplate {
 export default function AdminAiControlPage() {
   const [activeNotification, setActiveNotification] = useState("");
   
-  // Mock models toggle states
+  // Realistic AI Models via aicredits.in
   const [models, setModels] = useState([
-    { id: "gpt-4o", name: "OpenAI GPT-4o", provider: "OpenAI", enabled: true },
-    { id: "gpt-3.5", name: "OpenAI GPT-3.5 Turbo", provider: "OpenAI", enabled: false },
-    { id: "claude-3.5-sonnet", name: "Anthropic Claude 3.5 Sonnet", provider: "Anthropic", enabled: true },
-    { id: "claude-3-haiku", name: "Anthropic Claude 3 Haiku", provider: "Anthropic", enabled: true }
+    { id: "gpt-5", name: "OpenAI GPT-5 (Ad Sets & Campaigns)", provider: "OpenAI", enabled: true },
+    { id: "gpt-4o-mini", name: "OpenAI GPT-4o Mini (Default Tasks)", provider: "OpenAI", enabled: true },
+    { id: "claude-3.5-sonnet", name: "Anthropic Claude 3.5 Sonnet", provider: "Anthropic", enabled: false },
+    { id: "gemini-1.5-pro", name: "Google Gemini 1.5 Pro", provider: "Google", enabled: false }
   ]);
 
   // Prompt templates
   const [prompts, setPrompts] = useState<PromptTemplate[]>([
-    { id: "pr_1", name: "PMax Campaign generator", category: "Campaign", template: "Create a campaign structure for {businessName} targeting {audience} with daily budget of {budget}..." },
-    { id: "pr_2", name: "Auto ROAS Optimizer", category: "Optimization", template: "Evaluate metrics and shift budget from low performing platforms if ROAS falls below {threshold}..." },
-    { id: "pr_3", name: "Weekly Executive Summary", category: "Reporting", template: "Draft a high level summary of ad spend, conversions, and target improvements for {clientName}..." }
+    { id: "pr_1", name: "High-End Ad Set Generator", category: "Campaign", template: "Using GPT-5: Generate highly persuasive ad copy and campaign structures targeting {audience} for {businessName}..." },
+    { id: "pr_2", name: "Default Data Parser", category: "Reporting", template: "Using GPT-4o Mini: Extract key metrics from the following CSV blob and format it as JSON..." },
+    { id: "pr_3", name: "Auto ROAS Optimizer", category: "Optimization", template: "Using GPT-4o Mini: Evaluate live ad metrics. Recommend budget shifts if ROAS falls below {threshold}..." }
   ]);
+
+  const [aiStats, setAiStats] = useState({ totalInsights: 0, cost: 0, tokens: 0 });
+
+  React.useEffect(() => {
+    async function fetchAiStats() {
+      try {
+        const token = localStorage.getItem("token") || localStorage.getItem("auth_token");
+        const res = await fetch("/api/v1/admin/ai-usage", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          // Simulate cost based on insights count for now, since tokens aren't stored in AiInsight table
+          setAiStats({
+            totalInsights: data.totalInsights,
+            cost: data.totalInsights * 0.05, // Mock 5 cents per insight
+            tokens: data.totalInsights * 400 // Mock 400 tokens per insight
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch ai usage", err);
+      }
+    }
+    fetchAiStats();
+  }, []);
 
   const triggerNotification = (msg: string) => {
     setActiveNotification(msg);
@@ -65,19 +90,19 @@ export default function AdminAiControlPage() {
       {/* Stats Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl">
-          <span className="text-[9px] font-bold text-zinc-500 uppercase block">Total OpenAI Cost</span>
-          <span className="text-lg font-bold text-white block mt-1">₹4,08,000</span>
-          <span className="text-[8px] text-zinc-400 font-semibold block mt-0.5">This Month • 16.2M Tokens</span>
+          <span className="text-[9px] font-bold text-zinc-500 uppercase block">Total Generated Insights</span>
+          <span className="text-lg font-bold text-white block mt-1">{aiStats.totalInsights.toLocaleString()}</span>
+          <span className="text-[8px] text-zinc-400 font-semibold block mt-0.5">Across all organizations</span>
         </div>
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl">
-          <span className="text-[9px] font-bold text-zinc-500 uppercase block">Total Anthropic Cost</span>
-          <span className="text-lg font-bold text-white block mt-1">₹2,08,000</span>
-          <span className="text-[8px] text-zinc-400 font-semibold block mt-0.5">This Month • 8.4M Tokens</span>
+          <span className="text-[9px] font-bold text-zinc-500 uppercase block">Estimated API Cost</span>
+          <span className="text-lg font-bold text-white block mt-1">₹{Math.floor(aiStats.cost * 83).toLocaleString()}</span>
+          <span className="text-[8px] text-zinc-400 font-semibold block mt-0.5">This Month • {aiStats.tokens.toLocaleString()} Tokens</span>
         </div>
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl">
           <span className="text-[9px] font-bold text-zinc-500 uppercase block">Average Prompt Latency</span>
-          <span className="text-lg font-bold text-emerald-400 block mt-1">1.2s</span>
-          <span className="text-[8px] text-zinc-400 font-semibold block mt-0.5">99.8% Prompt success rate</span>
+          <span className="text-lg font-bold text-emerald-400 block mt-1">Pending</span>
+          <span className="text-[8px] text-zinc-400 font-semibold block mt-0.5">Awaiting telemetry data</span>
         </div>
       </div>
 

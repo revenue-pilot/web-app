@@ -17,7 +17,10 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({ 
+      where: { email },
+      include: { organization: true }
+    });
     if (user && user.passwordHash) {
       const isMatch = await bcrypt.compare(pass, user.passwordHash);
       if (isMatch) {
@@ -32,8 +35,13 @@ export class AuthService {
   }
 
   async login(user: any) {
-    // Generate tokens
-    const payload = { email: user.email, sub: user.id, role: user.role, organizationId: user.organizationId };
+    const payload = { 
+      email: user.email, 
+      sub: user.id, 
+      role: user.role, 
+      organizationId: user.organizationId,
+      isOnboarded: user.organization?.isOnboarded || false
+    };
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
@@ -76,12 +84,7 @@ export class AuthService {
         const organization = await this.prisma.organization.create({
           data: {
             name: `${name.split(' ')[0]}'s Workspace`,
-            subscriptions: {
-              create: {
-                tier: 'STARTER',
-                status: 'ACTIVE'
-              }
-            }
+            isOnboarded: false,
           },
         });
 

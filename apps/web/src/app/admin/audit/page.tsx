@@ -16,14 +16,37 @@ export default function AdminAuditMatrixPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterEvent, setFilterEvent] = useState("All");
 
-  const [events, setEvents] = useState<AuditEvent[]>([
-    { id: "evt_1", user: "Arjun Mehta", org: "Arjun Mehta Agency", event: "Campaign Launch", details: "Pushed 'Summer Sale - Search' to Google Ads API.", timestamp: "2 mins ago", status: "Success" },
-    { id: "evt_2", user: "Sonia Roy", org: "FitLife Gyms", event: "File Upload", details: "Uploaded 'Promo_Video.mp4' (12.8 MB) to S3 vault.", timestamp: "12 mins ago", status: "Success" },
-    { id: "evt_3", user: "System Scheduler", org: "EcoMart India", event: "Automation Trigger", details: "Shifted ₹25,000 budget from Meta to Google Search.", timestamp: "1 hr ago", status: "Success" },
-    { id: "evt_4", user: "Karan Singh", org: "UrbanStays Hotel", event: "AI Usage", details: "Called Claude 3.5 Sonnet to draft ad copy matrix.", timestamp: "3 hrs ago", status: "Success" },
-    { id: "evt_5", user: "Billing Worker", org: "Apex Logistics", event: "Payment Failure", details: "Razorpay webhook returned response: Insufficient Funds.", timestamp: "1 day ago", status: "Failure" },
-    { id: "evt_6", user: "Super Admin", org: "Platform", event: "Impersonation", details: "Impersonated tenant organization Arjun Mehta Agency.", timestamp: "2 days ago", status: "Warning" }
-  ]);
+  const [events, setEvents] = useState<AuditEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    async function fetchAuditLogs() {
+      try {
+        const token = localStorage.getItem("token") || localStorage.getItem("auth_token");
+        const res = await fetch("/api/v1/admin/audit", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const mapped = data.map((e: any) => ({
+            id: e.id,
+            user: e.userId || 'System',
+            org: e.organizationId || 'Platform',
+            event: e.action,
+            details: JSON.stringify(e.details),
+            timestamp: new Date(e.createdAt).toLocaleString(),
+            status: "Success"
+          }));
+          setEvents(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to fetch audit logs", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchAuditLogs();
+  }, []);
 
   const eventTypes = ["All", "Campaign Launch", "File Upload", "Automation Trigger", "AI Usage", "Payment Failure", "Impersonation"];
 
@@ -95,7 +118,11 @@ export default function AdminAuditMatrixPage() {
               </tr>
             </thead>
             <tbody className="font-semibold text-zinc-300">
-              {filteredEvents.map((evt) => (
+              {loading ? (
+                <tr><td colSpan={5} className="py-4 text-center">Loading audit logs...</td></tr>
+              ) : filteredEvents.length === 0 ? (
+                <tr><td colSpan={5} className="py-4 text-center">No audit logs found.</td></tr>
+              ) : filteredEvents.map((evt) => (
                 <tr key={evt.id} className="border-b border-[#1C283F] hover:bg-[#151D2F] transition-colors">
                   <td className="py-3 text-zinc-500 font-mono">
                     {evt.timestamp}

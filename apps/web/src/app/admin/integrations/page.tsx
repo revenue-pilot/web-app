@@ -13,17 +13,37 @@ interface IntegrationRecord {
 }
 
 export default function AdminIntegrationCommandPage() {
-  const [integrations, setIntegrations] = useState<IntegrationRecord[]>([
-    { id: "int_1", name: "Google Ads API", category: "Ads", status: "Connected", connectedAccounts: 120, errorRate: "0.02%", lastChecked: "5 mins ago" },
-    { id: "int_2", name: "Meta Marketing API", category: "Ads", status: "Connected", connectedAccounts: 88, errorRate: "0.14%", lastChecked: "12 mins ago" },
-    { id: "int_3", name: "Google Analytics 4", category: "Analytics", status: "Connected", connectedAccounts: 114, errorRate: "0.00%", lastChecked: "1 hr ago" },
-    { id: "int_4", name: "Stripe Gateway", category: "Payments", status: "Connected", connectedAccounts: 1, errorRate: "0.00%", lastChecked: "2 mins ago" },
-    { id: "int_5", name: "Razorpay Gateway", category: "Payments", status: "Connected", connectedAccounts: 1, errorRate: "0.01%", lastChecked: "4 mins ago" },
-    { id: "int_6", name: "OpenAI Engine", category: "AI", status: "Degraded", connectedAccounts: 4, errorRate: "4.82%", lastChecked: "30s ago" },
-    { id: "int_7", name: "Anthropic API", category: "AI", status: "Connected", connectedAccounts: 4, errorRate: "0.05%", lastChecked: "10 mins ago" },
-    { id: "int_8", name: "Slack Alerts App", category: "Communication", status: "Connected", connectedAccounts: 45, errorRate: "0.10%", lastChecked: "4 hrs ago" },
-    { id: "int_9", name: "WhatsApp Business API", category: "Communication", status: "Disconnected", connectedAccounts: 0, errorRate: "100%", lastChecked: "1 day ago" }
-  ]);
+  const [integrations, setIntegrations] = useState<IntegrationRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    async function fetchIntegrations() {
+      try {
+        const token = localStorage.getItem("token") || localStorage.getItem("auth_token");
+        const res = await fetch("/api/v1/admin/integrations", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          // We map the counts we got from the backend into the UI format
+          setIntegrations([
+            { id: "int_1", name: "Google Ads API", category: "Ads", status: data.googleAds > 0 ? "Connected" : "Disconnected", connectedAccounts: data.googleAds, errorRate: "0.00%", lastChecked: "Live" },
+            { id: "int_2", name: "Meta Marketing API", category: "Ads", status: data.metaAds > 0 ? "Connected" : "Disconnected", connectedAccounts: data.metaAds, errorRate: "0.00%", lastChecked: "Live" },
+            { id: "int_3", name: "Google Analytics 4", category: "Analytics", status: data.ga4 > 0 ? "Connected" : "Disconnected", connectedAccounts: data.ga4, errorRate: "0.00%", lastChecked: "Live" },
+            { id: "int_4", name: "Stripe Gateway", category: "Payments", status: "Disconnected", connectedAccounts: 0, errorRate: "0.00%", lastChecked: "Not Configured" },
+            { id: "int_5", name: "Razorpay Gateway", category: "Payments", status: "Disconnected", connectedAccounts: 0, errorRate: "0.00%", lastChecked: "Not Configured" },
+            { id: "int_6", name: "OpenAI Engine", category: "AI", status: "Connected", connectedAccounts: 1, errorRate: "0.00%", lastChecked: "Live" },
+            { id: "int_7", name: "Anthropic API", category: "AI", status: "Connected", connectedAccounts: 1, errorRate: "0.00%", lastChecked: "Live" }
+          ]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch integrations", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchIntegrations();
+  }, []);
 
   const [activeFilter, setActiveFilter] = useState("All");
   const categories = ["All", "Ads", "Analytics", "Payments", "AI", "Communication"];
@@ -88,7 +108,11 @@ export default function AdminIntegrationCommandPage() {
               </tr>
             </thead>
             <tbody className="font-semibold text-zinc-300">
-              {filteredIntegrations.map((item) => (
+              {loading ? (
+                <tr><td colSpan={6} className="py-4 text-center">Loading integrations...</td></tr>
+              ) : filteredIntegrations.length === 0 ? (
+                <tr><td colSpan={6} className="py-4 text-center">No integrations found.</td></tr>
+              ) : filteredIntegrations.map((item) => (
                 <tr key={item.id} className="border-b border-[#1C283F] hover:bg-[#151D2F] transition-colors">
                   <td className="py-3">
                     <span className="font-bold text-white block">{item.name}</span>

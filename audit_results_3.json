@@ -1,0 +1,112 @@
+[
+  {
+    "phase": "AUTH: Signup",
+    "status": "PASS",
+    "details": {
+      "endpoint": "/api/auth/signup",
+      "request": "Test...123!",
+      "responseStatus": 201,
+      "body": {
+        "message": "Signup successful. Please check your email to verify your account."
+      },
+      "status": "PASS"
+    }
+  },
+  {
+    "phase": "AUTH: Login",
+    "status": "FAIL",
+    "details": {
+      "endpoint": "/api/auth/login",
+      "responseStatus": 401,
+      "body": {},
+      "status": "FAIL"
+    }
+  },
+  {
+    "phase": "AUTH: Profile (Protected)",
+    "status": "FAIL",
+    "error": "Unexpected end of JSON input",
+    "stack": "SyntaxError: Unexpected end of JSON input\n    at JSON.parse (<anonymous>)\n    at parseJSONFromBytes (node:internal/deps/undici/undici:5738:19)\n    at successSteps (node:internal/deps/undici/undici:5719:27)\n    at fullyReadBody (node:internal/deps/undici/undici:4609:9)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async consumeBody (node:internal/deps/undici/undici:5728:7)\n    at async D:\\revenuepilot-main\\audit3.js:79:21\n    at async logPhase (D:\\revenuepilot-main\\audit3.js:32:20)\n    at async runAudit (D:\\revenuepilot-main\\audit3.js:75:3)"
+  },
+  {
+    "phase": "CRM: Create Lead",
+    "status": "FAIL",
+    "details": {
+      "endpoint": "/api/crm/leads",
+      "responseStatus": 401,
+      "body": {
+        "message": "Unauthorized",
+        "statusCode": 401
+      },
+      "status": "FAIL"
+    }
+  },
+  {
+    "phase": "CRM: Create Deal",
+    "status": "FAIL",
+    "details": {
+      "endpoint": "/api/crm/pipelines/deal",
+      "responseStatus": 401,
+      "body": {
+        "message": "Unauthorized",
+        "statusCode": 401
+      },
+      "status": "FAIL"
+    }
+  },
+  {
+    "phase": "CRM: Move Deal Stage",
+    "status": "FAIL",
+    "details": {
+      "status": "FAIL",
+      "error": "No Deal ID"
+    }
+  },
+  {
+    "phase": "AI: Chat endpoint",
+    "status": "PASS",
+    "details": {
+      "endpoint": "/api/ai/chat",
+      "responseStatus": 201,
+      "status": "PASS"
+    }
+  },
+  {
+    "phase": "AI: Campaign generation",
+    "status": "PASS",
+    "details": {
+      "endpoint": "/api/ai/generate-campaign",
+      "responseStatus": 201,
+      "status": "PASS"
+    }
+  },
+  {
+    "phase": "AUTOMATIONS: Create rule",
+    "status": "FAIL",
+    "details": {
+      "endpoint": "/api/v1/automation/rules",
+      "responseStatus": 401,
+      "body": {
+        "message": "Unauthorized",
+        "statusCode": 401
+      },
+      "status": "FAIL"
+    }
+  },
+  {
+    "phase": "AUTOMATIONS: Execute rule",
+    "status": "FAIL",
+    "details": {
+      "status": "FAIL"
+    }
+  },
+  {
+    "phase": "REPORTS: Create report",
+    "status": "FAIL",
+    "details": {
+      "endpoint": "/api/reports/generate",
+      "responseStatus": 400,
+      "status": "FAIL"
+    }
+  }
+]

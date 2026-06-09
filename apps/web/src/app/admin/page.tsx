@@ -11,77 +11,54 @@ import {
 } from 'recharts';
 
 // Data stores
+// Data stores (Empty until we connect historical timeseries backend)
 const revenueTrend = {
-  Daily: [
-    { name: 'Mon', revenue: 45000 },
-    { name: 'Tue', revenue: 52000 },
-    { name: 'Wed', revenue: 68000 },
-    { name: 'Thu', revenue: 85000 },
-    { name: 'Fri', revenue: 110000 },
-    { name: 'Sat', revenue: 95000 },
-    { name: 'Sun', revenue: 120000 },
-  ],
-  Weekly: [
-    { name: 'Week 1', revenue: 350000 },
-    { name: 'Week 2', revenue: 420000 },
-    { name: 'Week 3', revenue: 380000 },
-    { name: 'Week 4', revenue: 510000 },
-  ],
-  Monthly: [
-    { name: 'Jan', revenue: 450000 },
-    { name: 'Feb', revenue: 520000 },
-    { name: 'Mar', revenue: 680000 },
-    { name: 'Apr', revenue: 850000 },
-    { name: 'May', revenue: 1100000 },
-    { name: 'Jun', revenue: 1450000 },
-  ],
-  Yearly: [
-    { name: '2023', revenue: 4500000 },
-    { name: '2024', revenue: 7800000 },
-    { name: '2025', revenue: 12400000 },
-    { name: '2026', revenue: 16800000 },
-  ]
+  Daily: [],
+  Weekly: [],
+  Monthly: [],
+  Yearly: []
 };
 
-const subscriptionRevenue = [
-  { name: 'Jan', Standard: 120, Revenue: 80, Premium: 30 },
-  { name: 'Feb', Standard: 150, Revenue: 110, Premium: 45 },
-  { name: 'Mar', Standard: 190, Revenue: 150, Premium: 60 },
-  { name: 'Apr', Standard: 240, Revenue: 210, Premium: 85 },
-  { name: 'May', Standard: 310, Revenue: 290, Premium: 110 },
-  { name: 'Jun', Standard: 380, Revenue: 390, Premium: 148 },
-];
-
-const clientRevenue = [
-  { name: 'Jan', New: 45, Churned: 5 },
-  { name: 'Feb', New: 58, Churned: 8 },
-  { name: 'Mar', New: 72, Churned: 6 },
-  { name: 'Apr', New: 88, Churned: 12 },
-  { name: 'May', New: 110, Churned: 14 },
-  { name: 'Jun', New: 145, Churned: 10 },
-];
-
-const platformActivity = [
-  { name: 'Jan', Logins: 12000, Launches: 240, Reports: 1100 },
-  { name: 'Feb', Logins: 15400, Launches: 310, Reports: 1450 },
-  { name: 'Mar', Logins: 19800, Launches: 420, Reports: 1900 },
-  { name: 'Apr', Logins: 24500, Launches: 580, Reports: 2500 },
-  { name: 'May', Logins: 32000, Launches: 790, Reports: 3200 },
-  { name: 'Jun', Logins: 45000, Launches: 1100, Reports: 4500 },
-];
-
-const aiCostTrend = [
-  { name: 'Jan', OpenAI: 1200, Anthropic: 400, Requests: 45000 },
-  { name: 'Feb', OpenAI: 1500, Anthropic: 600, Requests: 58000 },
-  { name: 'Mar', OpenAI: 2100, Anthropic: 950, Requests: 82000 },
-  { name: 'Apr', OpenAI: 2900, Anthropic: 1400, Requests: 110000 },
-  { name: 'May', OpenAI: 3800, Anthropic: 1900, Requests: 165000 },
-  { name: 'Jun', OpenAI: 5100, Anthropic: 2600, Requests: 240000 },
-];
+const subscriptionRevenue: any[] = [];
+const clientRevenue: any[] = [];
+const platformActivity: any[] = [];
+const aiCostTrend: any[] = [];
 
 export default function AdminDashboardPage() {
   const [revenueFilter, setRevenueFilter] = useState<"Daily" | "Weekly" | "Monthly" | "Yearly">("Monthly");
   const [activeChartTab, setActiveChartTab] = useState("revenue"); // revenue, subscriptions, clients, activity, ai
+  const [stats, setStats] = useState({
+    totalOrganizations: 0,
+    totalUsers: 0,
+    totalCampaigns: 0,
+    totalAiLogs: 0,
+    mrr: 0,
+    arr: 0,
+    trialUsers: 0,
+    conversionRate: "0.0",
+    churnRate: "0.0",
+    processedSpend: 0,
+  });
+
+  React.useEffect(() => {
+    async function fetchStats() {
+      try {
+        const token = localStorage.getItem("token") || localStorage.getItem("auth_token");
+        const res = await fetch("/api/v1/admin/dashboard", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStats(data);
+        }
+      } catch (err) {
+        console.error("Failed to load real-time admin stats", err);
+      }
+    }
+    fetchStats();
+  }, []);
 
   return (
     <div className="space-y-6 pb-12 font-sans">
@@ -104,11 +81,10 @@ export default function AdminDashboardPage() {
         {/* KPI 1: Total Revenue */}
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl flex flex-col justify-between h-32 relative group overflow-hidden">
           <div>
-            <span className="text-[9px] font-bold text-zinc-500 uppercase block">Total Revenue</span>
-            <span className="text-xl font-bold text-white block mt-1">₹1,68,00,000</span>
+            <span className="text-[9px] font-bold text-zinc-500 uppercase block">Total System Revenue</span>
+            <span className="text-xl font-bold text-white block mt-1">₹{stats.arr.toLocaleString()}</span>
             <div className="text-[9px] text-zinc-400 font-semibold mt-1 space-y-0.5">
-              <p>Today: <span className="text-emerald-400">₹1,20,000</span></p>
-              <p>Monthly: <span className="text-emerald-400">₹14,50,000</span></p>
+              <p>Projected based on active MRR</p>
             </div>
           </div>
           <Link href="/admin/revenue" className="text-[9px] font-extrabold text-emerald-400 hover:text-emerald-300 transition-colors uppercase tracking-wider mt-2 block border-t border-[#1C283F] pt-2">
@@ -120,10 +96,10 @@ export default function AdminDashboardPage() {
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl flex flex-col justify-between h-32 relative group overflow-hidden">
           <div>
             <span className="text-[9px] font-bold text-zinc-500 uppercase block">Monthly Run Rate</span>
-            <span className="text-xl font-bold text-white block mt-1">₹14,50,000</span>
+            <span className="text-xl font-bold text-white block mt-1">₹{stats.mrr.toLocaleString()}</span>
             <div className="text-[9px] text-emerald-400 font-bold flex items-center gap-1 mt-1.5">
               <ArrowUpRight size={12} />
-              <span>+31.8% MRR Revenue</span>
+              <span>Real-time MRR</span>
             </div>
           </div>
           <Link href="/admin/revenue" className="text-[9px] font-extrabold text-emerald-400 hover:text-emerald-300 transition-colors uppercase tracking-wider mt-2 block border-t border-[#1C283F] pt-2">
@@ -135,8 +111,8 @@ export default function AdminDashboardPage() {
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl flex flex-col justify-between h-32 relative group overflow-hidden">
           <div>
             <span className="text-[9px] font-bold text-zinc-500 uppercase block">Annual Run Rate</span>
-            <span className="text-xl font-bold text-white block mt-1">₹1,74,00,000</span>
-            <p className="text-[9px] text-zinc-500 font-bold mt-1.5">Forecast ARR: ₹1.82 Cr</p>
+            <span className="text-xl font-bold text-white block mt-1">₹{stats.arr.toLocaleString()}</span>
+            <p className="text-[9px] text-zinc-500 font-bold mt-1.5">Based on Real-time MRR</p>
           </div>
           <div className="border-t border-[#1C283F] pt-2 mt-2">
             <span className="text-[9px] font-extrabold text-zinc-500 uppercase">Static Forecasted</span>
@@ -146,11 +122,10 @@ export default function AdminDashboardPage() {
         {/* KPI 4: Active Customers */}
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl flex flex-col justify-between h-32 relative group overflow-hidden">
           <div>
-            <span className="text-[9px] font-bold text-zinc-500 uppercase block">Active Customers</span>
-            <span className="text-xl font-bold text-white block mt-1">1,284 Clients</span>
+            <span className="text-[9px] font-bold text-zinc-500 uppercase block">Total Workspaces (Agencies)</span>
+            <span className="text-xl font-bold text-white block mt-1">{stats.totalOrganizations.toLocaleString()}</span>
             <div className="text-[9px] text-zinc-400 font-semibold mt-1 space-y-0.5">
-              <p>New: <span className="text-emerald-400">+145</span></p>
-              <p>Lost: <span className="text-red-400">-10</span></p>
+              <p>Registered users: <span className="text-emerald-400">{stats.totalUsers.toLocaleString()}</span></p>
             </div>
           </div>
           <Link href="/admin/clients" className="text-[9px] font-extrabold text-emerald-400 hover:text-emerald-300 transition-colors uppercase tracking-wider mt-2 block border-t border-[#1C283F] pt-2">
@@ -162,8 +137,8 @@ export default function AdminDashboardPage() {
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl flex flex-col justify-between h-32 relative group overflow-hidden">
           <div>
             <span className="text-[9px] font-bold text-zinc-500 uppercase block">Trial Users</span>
-            <span className="text-xl font-bold text-white block mt-1">324 Trials</span>
-            <p className="text-[9px] text-amber-400 font-bold mt-1.5">42 Expiring within 48h</p>
+            <span className="text-xl font-bold text-white block mt-1">{stats.trialUsers} Trials</span>
+            <p className="text-[9px] text-amber-400 font-bold mt-1.5">Expiring soon tracking disabled</p>
           </div>
           <div className="border-t border-[#1C283F] pt-2 mt-2">
             <span className="text-[9px] font-extrabold text-zinc-500 uppercase">Billing pipeline</span>
@@ -174,7 +149,7 @@ export default function AdminDashboardPage() {
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl flex flex-col justify-between h-32 relative group overflow-hidden">
           <div>
             <span className="text-[9px] font-bold text-zinc-500 uppercase block">Conversion Rate</span>
-            <span className="text-xl font-bold text-white block mt-1">28.4%</span>
+            <span className="text-xl font-bold text-white block mt-1">{stats.conversionRate}%</span>
             <p className="text-[9px] text-emerald-400 font-bold mt-1.5">Trial &rarr; Paid Upgrade</p>
           </div>
           <div className="border-t border-[#1C283F] pt-2 mt-2">
@@ -186,8 +161,8 @@ export default function AdminDashboardPage() {
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl flex flex-col justify-between h-32 relative group overflow-hidden">
           <div>
             <span className="text-[9px] font-bold text-zinc-500 uppercase block">Churn Rate</span>
-            <span className="text-xl font-bold text-white block mt-1">1.2%</span>
-            <p className="text-[9px] text-emerald-400 font-bold mt-1.5">-0.4% from last month</p>
+            <span className="text-xl font-bold text-white block mt-1">{stats.churnRate}%</span>
+            <p className="text-[9px] text-emerald-400 font-bold mt-1.5">Based on total subscriptions</p>
           </div>
           <div className="border-t border-[#1C283F] pt-2 mt-2">
             <span className="text-[9px] font-extrabold text-zinc-500 uppercase">Annual churn: 14.4%</span>
@@ -198,7 +173,7 @@ export default function AdminDashboardPage() {
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl flex flex-col justify-between h-32 relative group overflow-hidden">
           <div>
             <span className="text-[9px] font-bold text-zinc-500 uppercase block">Processed Spend</span>
-            <span className="text-xl font-bold text-white block mt-1">₹8,40,00,000</span>
+            <span className="text-xl font-bold text-white block mt-1">₹{stats.processedSpend.toLocaleString()}</span>
             <p className="text-[9px] text-zinc-400 font-semibold mt-1">Managed across pipelines</p>
           </div>
           <Link href="/admin/campaigns" className="text-[9px] font-extrabold text-emerald-400 hover:text-emerald-300 transition-colors uppercase tracking-wider mt-2 block border-t border-[#1C283F] pt-2">
@@ -210,10 +185,9 @@ export default function AdminDashboardPage() {
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl flex flex-col justify-between h-32 relative group overflow-hidden">
           <div>
             <span className="text-[9px] font-bold text-zinc-500 uppercase block">Total Campaigns</span>
-            <span className="text-xl font-bold text-white block mt-1">14,092 Live</span>
+            <span className="text-xl font-bold text-white block mt-1">{stats.totalCampaigns.toLocaleString()}</span>
             <div className="text-[9px] text-zinc-400 font-semibold mt-1 space-y-0.5">
-              <p>Meta: <span className="text-blue-400">8,204</span></p>
-              <p>Google: <span className="text-red-400">5,888</span></p>
+              <p>Tracking live DB objects</p>
             </div>
           </div>
           <Link href="/admin/campaigns" className="text-[9px] font-extrabold text-emerald-400 hover:text-emerald-300 transition-colors uppercase tracking-wider mt-2 block border-t border-[#1C283F] pt-2">
@@ -225,10 +199,9 @@ export default function AdminDashboardPage() {
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl flex flex-col justify-between h-32 relative group overflow-hidden">
           <div>
             <span className="text-[9px] font-bold text-zinc-500 uppercase block">AI Usage Logs</span>
-            <span className="text-xl font-bold text-white block mt-1">2.4M Req</span>
+            <span className="text-xl font-bold text-white block mt-1">{stats.totalAiLogs.toLocaleString()}</span>
             <div className="text-[9px] text-zinc-400 font-semibold mt-1 space-y-0.5">
-              <p>Tokens: <span className="text-zinc-300">14.8B</span></p>
-              <p>Cost: <span className="text-red-400">₹6,40,000</span></p>
+              <p>Insights requested globally</p>
             </div>
           </div>
           <Link href="/admin/ai-control" className="text-[9px] font-extrabold text-emerald-400 hover:text-emerald-300 transition-colors uppercase tracking-wider mt-2 block border-t border-[#1C283F] pt-2">

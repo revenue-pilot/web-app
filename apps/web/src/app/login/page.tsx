@@ -35,10 +35,22 @@ export default function LoginPage() {
       if (res.ok && data.success && data.user) {
         setSuccessMsg("Verification success! Redirecting...");
         localStorage.setItem("user_email", data.user.email);
-        localStorage.setItem("user_role", data.user.role === "ADMIN" ? "Platform Admin" : "Agency Owner");
+        localStorage.setItem("user_role", data.user.role === "ADMIN" ? "Admin" : "Agency Owner");
         localStorage.removeItem("impersonate_tenant");
+        localStorage.setItem("access_token", data.access_token);
+        
+        // Use token payload to check if onboarded
+        const tokenPayload = JSON.parse(atob(data.access_token.split('.')[1]));
+        const isOnboarded = tokenPayload.isOnboarded;
+
         setTimeout(() => {
-          window.location.href = data.user.role === "ADMIN" ? "/admin" : "/dashboard";
+          if (data.user.role === "ADMIN") {
+            window.location.href = "/admin";
+          } else if (!isOnboarded) {
+            window.location.href = "/onboarding";
+          } else {
+            window.location.href = "/dashboard";
+          }
         }, 800);
       } else {
         setErrorMsg(data.message || "The login link is invalid or has expired. Please request a new one.");
@@ -74,10 +86,21 @@ export default function LoginPage() {
       
       if (data.success) {
         localStorage.setItem("user_email", data.user.email);
-        localStorage.setItem("user_role", data.user.role === "ADMIN" ? "Platform Admin" : "Agency Owner");
+        localStorage.setItem("user_role", data.user.role === "ADMIN" ? "Admin" : "Agency Owner");
         localStorage.removeItem("impersonate_tenant");
+        localStorage.setItem("access_token", data.access_token);
         
-        window.location.href = data.user.role === "ADMIN" ? "/admin" : "/dashboard";
+        // Use token payload to check if onboarded
+        const tokenPayload = JSON.parse(atob(data.access_token.split('.')[1]));
+        const isOnboarded = tokenPayload.isOnboarded;
+
+        if (data.user.role === "ADMIN") {
+          window.location.href = "/admin";
+        } else if (!isOnboarded) {
+          window.location.href = "/onboarding";
+        } else {
+          window.location.href = "/dashboard";
+        }
       } else {
         setErrorMsg(data.message || "Failed to authenticate. Please check your credentials.");
       }
@@ -133,10 +156,22 @@ export default function LoginPage() {
       if (res.ok && data.access_token) {
         setSuccessMsg("Google sign-in complete. Redirecting...");
         localStorage.setItem("user_email", data.user.email);
-        localStorage.setItem("user_role", data.user.role === "ADMIN" ? "Platform Admin" : "Agency Owner");
+        localStorage.setItem("user_role", data.user.role === "ADMIN" ? "Admin" : "Agency Owner");
         localStorage.removeItem("impersonate_tenant");
+        localStorage.setItem("access_token", data.access_token);
+        
+        // Use token payload to check if onboarded
+        const tokenPayload = JSON.parse(atob(data.access_token.split('.')[1]));
+        const isOnboarded = tokenPayload.isOnboarded;
+
         setTimeout(() => {
-          window.location.href = data.user.role === "ADMIN" ? "/admin" : "/dashboard";
+          if (data.user.role === "ADMIN") {
+            window.location.href = "/admin";
+          } else if (!isOnboarded) {
+            window.location.href = "/onboarding";
+          } else {
+            window.location.href = "/dashboard";
+          }
         }, 800);
       } else {
         setErrorMsg("Failed to authenticate with Google.");

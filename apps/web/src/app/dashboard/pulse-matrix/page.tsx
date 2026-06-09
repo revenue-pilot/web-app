@@ -1,35 +1,24 @@
 "use client";
 import React, { useState } from "react";
 import { Activity, BarChart, TrendingUp, HelpCircle, Layers } from "lucide-react";
-import { useAnalytics } from "@/hooks/useApi";
+import { useAnalyticsPulseMatrix } from "@/hooks/useApi";
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 export default function PulseMatrixPage() {
-  const { data: analyticsData, loading, error, refetch } = useAnalytics();
+  const { data: pulseMatrixData, loading, error } = useAnalyticsPulseMatrix();
   const [attributionModel, setAttributionModel] = useState("Last Click");
 
-  const funnelData = [
-    { stage: "Impressions", Google: 1500000, Meta: 1200000 },
-    { stage: "Clicks", Google: 45000, Meta: 36000 },
-    { stage: "Leads", Google: 4500, Meta: 2400 },
-    { stage: "Customers", Google: 987, Meta: 654 }
-  ];
+  if (loading || !pulseMatrixData) {
+    return (
+      <div className="flex justify-center items-center h-64 text-emerald-600 font-semibold animate-pulse">
+        Loading Pulse Matrix...
+      </div>
+    );
+  }
 
-  const attributionModels = [
-    { name: "Last Click", Google: "62%", Meta: "30%", Others: "8%", description: "Attributes 100% of the conversion to the last ad clicked by the customer." },
-    { name: "First Click", Google: "40%", Meta: "50%", Others: "10%", description: "Attributes 100% of the conversion to the first ad the user interacted with." },
-    { name: "Linear", Google: "50%", Meta: "40%", Others: "10%", description: "Distributes conversion value equally across all ad touchpoints in the funnel." },
-    { name: "Time Decay", Google: "55%", Meta: "37%", Others: "8%", description: "Gives more weight to touchpoints that occurred closer in time to the conversion." }
-  ];
+  const { funnelData, attributionModels, cohortData } = pulseMatrixData;
 
-  const cohortData = [
-    { month: "Jan 2026", size: 120, m1: "100%", m2: "92%", m3: "88%", m4: "85%", m5: "83%" },
-    { month: "Feb 2026", size: 145, m1: "100%", m2: "94%", m3: "90%", m4: "87%", m5: "-" },
-    { month: "Mar 2026", size: 160, m1: "100%", m2: "95%", m3: "89%", m4: "-", m5: "-" },
-    { month: "Apr 2026", size: 190, m1: "100%", m2: "93%", m3: "-", m4: "-", m5: "-" }
-  ];
-
-  const currentModelDetails = attributionModels.find((m) => m.name === attributionModel) || attributionModels[0];
+  const currentModelDetails = attributionModels.find((m: any) => m.name === attributionModel) || attributionModels[0];
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">

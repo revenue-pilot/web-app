@@ -15,12 +15,60 @@ export default function AdminSubscriptionsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeNotification, setActiveNotification] = useState("");
 
-  const [subscriptions, setSubscriptions] = useState<TenantSubscription[]>([
-    { id: "sub_1", tenant: "Acme Corp", plan: "Premium", amount: 2499, status: "active", nextBilling: "2026-07-01" },
-    { id: "sub_2", tenant: "Globex Inc", plan: "Revenue", amount: 1999, status: "active", nextBilling: "2026-06-15" },
-    { id: "sub_3", tenant: "Soylent Corp", plan: "Revenue", amount: 1999, status: "past_due", nextBilling: "2026-06-01" },
-    { id: "sub_4", tenant: "Initech", plan: "Standard", amount: 1199, status: "canceled", nextBilling: "-" },
-  ]);
+  const [subscriptions, setSubscriptions] = useState<TenantSubscription[]>([]);
+  const [stats, setStats] = useState({ totalActive: 0, mrr: 0, pastDue: 0 });
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    async function fetchData() {
+      try {
+        const token = localStorage.getItem("token") || localStorage.getItem("auth_token");
+        const headers = { Authorization: `Bearer ${token}` };
+        
+        // Fetch subscriptions
+        const subRes = await fetch("/api/v1/admin/subscriptions", { headers });
+        if (subRes.ok) {
+          const subData = await subRes.json();
+          let mrr = 0;
+          let active = 0;
+          let pastDue = 0;
+          
+          const mapped = subData.map((s: any) => {
+            const tier = s.tier?.toUpperCase() || 'UNKNOWN';
+            let amount = 0;
+            if (tier === 'STARTER') amount = 999;
+            else if (tier === 'REVENUE') amount = 1999;
+            else if (tier === 'PRO') amount = 4999;
+            else if (tier === 'ENTERPRISE') amount = 9999;
+            
+            if (s.status === 'ACTIVE') {
+              active++;
+              mrr += amount;
+            } else if (s.status === 'PAST_DUE') {
+              pastDue++;
+            }
+            
+            return {
+              id: s.id,
+              tenant: s.organization?.name || 'Unknown',
+              plan: s.tier,
+              amount,
+              status: s.status?.toLowerCase() || 'active',
+              nextBilling: s.endDate ? new Date(s.endDate).toLocaleDateString() : 'N/A'
+            };
+          });
+          
+          setSubscriptions(mapped);
+          setStats({ totalActive: active, mrr, pastDue });
+        }
+      } catch (err) {
+        console.error("Failed to fetch subscriptions", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
   const triggerNotification = (msg: string) => {
     setActiveNotification(msg);
@@ -64,19 +112,19 @@ export default function AdminSubscriptionsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl">
           <span className="text-[9px] font-bold text-zinc-500 uppercase block">Total Active Subs</span>
-          <span className="text-lg font-bold text-white block mt-1">842</span>
+          <span className="text-lg font-bold text-white block mt-1">{stats.totalActive}</span>
         </div>
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl border-amber-500/20 bg-amber-500/5">
           <span className="text-[9px] font-bold text-amber-500 uppercase block">Past Due Accounts</span>
-          <span className="text-lg font-bold text-amber-400 block mt-1">12</span>
+          <span className="text-lg font-bold text-amber-400 block mt-1">{stats.pastDue}</span>
         </div>
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl">
           <span className="text-[9px] font-bold text-zinc-500 uppercase block">Monthly Run Rate</span>
-          <span className="text-lg font-bold text-white block mt-1">₹14,52,000</span>
+          <span className="text-lg font-bold text-white block mt-1">₹{stats.mrr.toLocaleString()}</span>
         </div>
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl">
           <span className="text-[9px] font-bold text-zinc-500 uppercase block">Avg Rev Per User (ARPU)</span>
-          <span className="text-lg font-bold text-emerald-400 block mt-1">₹1,720</span>
+          <span className="text-lg font-bold text-emerald-400 block mt-1">₹{stats.totalActive > 0 ? Math.floor(stats.mrr / stats.totalActive).toLocaleString() : 0}</span>
         </div>
       </div>
 
@@ -99,7 +147,11 @@ export default function AdminSubscriptionsPage() {
               </tr>
             </thead>
             <tbody className="font-semibold text-zinc-300">
-              {filteredSubs.map((sub) => (
+              {loading ? (
+                <tr><td colSpan={6} className="py-4 text-center">Loading subscriptions...</td></tr>
+              ) : filteredSubs.length === 0 ? (
+                <tr><td colSpan={6} className="py-4 text-center">No subscriptions found.</td></tr>
+              ) : filteredSubs.map((sub) => (
                 <tr key={sub.id} className="border-b border-[#1C283F] hover:bg-[#151D2F] transition-colors">
                   <td className="py-3 font-bold text-white">{sub.tenant}</td>
                   <td className="py-3 text-zinc-300">{sub.plan}</td>

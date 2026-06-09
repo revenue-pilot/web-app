@@ -14,11 +14,7 @@ interface ThreatLog {
 
 export default function AdminFortressPage() {
   const [activeNotification, setActiveNotification] = useState("");
-  const [threats, setThreats] = useState<ThreatLog[]>([
-    { id: "thr_1", ip: "192.168.1.100", location: "Moscow, RU", user: "billing@apex.com", action: "Failed MFA Attempts", severity: "High", date: "2 mins ago" },
-    { id: "thr_2", ip: "45.98.112.4", location: "Beijing, CN", user: "karan@Revenuepilot.com", action: "Brute-force Scan", severity: "Critical", date: "1 hr ago" },
-    { id: "thr_3", ip: "103.45.12.87", location: "Mumbai, IN", user: "arjun@Revenuepilot.com", action: "Successful login (New device)", severity: "Medium", date: "2 hrs ago" }
-  ]);
+  const [threats, setThreats] = useState<ThreatLog[]>([]);
 
   const triggerNotification = (msg: string) => {
     setActiveNotification(msg);
@@ -62,19 +58,19 @@ export default function AdminFortressPage() {
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl">
           <span className="text-[9px] font-bold text-zinc-500 uppercase block">Failed Logins (24h)</span>
-          <span className="text-lg font-bold text-white block mt-1">42 Attempts</span>
+          <span className="text-lg font-bold text-white block mt-1">0 Attempts</span>
         </div>
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl">
           <span className="text-[9px] font-bold text-zinc-500 uppercase block">MFA Enrollment Rate</span>
-          <span className="text-lg font-bold text-emerald-400 block mt-1">94.8%</span>
+          <span className="text-lg font-bold text-emerald-400 block mt-1">0%</span>
         </div>
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl">
           <span className="text-[9px] font-bold text-zinc-500 uppercase block">Active Sessions</span>
-          <span className="text-lg font-bold text-white block mt-1">1,409 sessions</span>
+          <span className="text-lg font-bold text-white block mt-1">0 sessions</span>
         </div>
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl border-red-500/20 bg-red-500/5">
           <span className="text-[9px] font-bold text-red-500 uppercase block">Blocked Threat IPs</span>
-          <span className="text-lg font-bold text-red-400 block mt-1">456 IPs</span>
+          <span className="text-lg font-bold text-red-400 block mt-1">0 IPs</span>
         </div>
       </div>
 
@@ -98,7 +94,9 @@ export default function AdminFortressPage() {
                 </tr>
               </thead>
               <tbody className="font-semibold text-zinc-300">
-                {threats.map((t) => (
+                {threats.length === 0 ? (
+                  <tr><td colSpan={4} className="py-4 text-center">No threats detected.</td></tr>
+                ) : threats.map((t) => (
                   <tr key={t.id} className="border-b border-[#1C283F] hover:bg-[#151D2F] transition-colors">
                     <td className="py-3">
                       <span className="font-bold text-white block">{t.action}</span>

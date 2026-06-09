@@ -1,0 +1,50 @@
+[
+  {
+    "phase": "PHASE 1: USER REGISTRATION",
+    "status": "PASS",
+    "details": {
+      "endpoint": "POST /api/auth/signup",
+      "request": {
+        "email": "audit_user_560444@test.com",
+        "password": "Test...123!",
+        "name": "Audit User 560444"
+      },
+      "responseStatus": 201,
+      "responseBody": {
+        "message": "Signup successful. Please check your email to verify your account."
+      },
+      "dbRowsCreated": {
+        "user": {
+          "id": "0b00a03c-9fd4-4729-a49c-c47d925d9880",
+          "email": "audit_user_560444@test.com"
+        },
+        "organization": {
+          "id": "78fa5cb7-dfaa-41ea-a035-a8ba3714cc60",
+          "name": "My Workspace"
+        },
+        "subscription": null,
+        "auditLog": null
+      },
+      "status": "PASS"
+    }
+  },
+  {
+    "phase": "PHASE 2: LOGIN",
+    "status": "FAIL",
+    "details": {
+      "endpoint": "POST /api/auth/login",
+      "request": {
+        "email": "audit_user_560444@test.com",
+        "password": "Test...123!"
+      },
+      "responseStatus": 401,
+      "responseBody": {
+        "message": "Email not verified",
+        "error": "Unauthorized",
+        "statusCode": 401
+      },
+      "decodedJwt": null,
+      "status": "FAIL"
+    }
+  }
+]

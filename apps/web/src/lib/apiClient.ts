@@ -70,6 +70,10 @@ export async function getAnalyticsPulse() {
   return apiRequest("/api/analytics/pulse");
 }
 
+export async function getAnalyticsPulseMatrix() {
+  return apiRequest("/api/analytics/pulse-matrix");
+}
+
 export const updateSecuritySettings = async (data: any) => ({
   success: true,
 });
@@ -200,6 +204,13 @@ export async function inviteTeamMember(data: any) {
   return apiRequest("/api/team/invite", {
     method: "POST",
     body: JSON.stringify(data)
+  });
+}
+
+export async function updateTeamMemberRole(id: string, role: string) {
+  return apiRequest(`/api/team/${id}/role`, {
+    method: "PATCH",
+    body: JSON.stringify({ role })
   });
 }
 

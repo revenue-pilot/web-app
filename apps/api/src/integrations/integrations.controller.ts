@@ -19,14 +19,12 @@ export class IntegrationsController {
   ) {}
 
   @Get('google-ads/auth')
-  @Roles('ADMIN')
   @ApiOperation({ summary: 'Get Google Ads OAuth URL' })
   getGoogleAuthUrl(@Query('state') state: string) {
     return { url: this.googleAdsService.getAuthUrl(state) };
   }
 
   @Post('google-ads/callback')
-  @Roles('ADMIN')
   @ApiOperation({ summary: 'Handle Google Ads OAuth callback' })
   async handleGoogleCallback(
     @TenantId() orgId: string,
@@ -37,14 +35,12 @@ export class IntegrationsController {
   }
 
   @Get('meta-ads/auth')
-  @Roles('ADMIN')
   @ApiOperation({ summary: 'Get Meta Ads OAuth URL' })
   getMetaAuthUrl(@Query('state') state: string) {
     return { url: this.metaAdsService.getAuthUrl(state) };
   }
 
   @Post('meta-ads/callback')
-  @Roles('ADMIN')
   @ApiOperation({ summary: 'Handle Meta Ads OAuth callback' })
   async handleMetaCallback(
     @TenantId() orgId: string,

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { Plus, Users, Shield, Send, Check, Mail } from "lucide-react";
-import { useTeamMembers, useInviteTeamMember } from "@/hooks/useApi";
+import { useTeamMembers, useInviteTeamMember, useUpdateTeamMemberRole } from "@/hooks/useApi";
 
 export default function TeamPage() {
   const { data: members, loading, error, refetch } = useTeamMembers();
@@ -10,7 +10,8 @@ export default function TeamPage() {
 
   // Invite states
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("Campaign Specialist");
+  const [inviteRole, setInviteRole] = useState("Admin");
+  const { mutate: updateRole } = useUpdateTeamMemberRole();
 
   const membersList = Array.isArray(members) ? members : [];
 
@@ -27,6 +28,17 @@ export default function TeamPage() {
       setShowInviteModal(false);
     } catch (err) {
       console.error("Error inviting member:", err);
+    }
+  };
+
+  const handleEditRbac = async (member: any) => {
+    const newRole = member.role === "Admin" ? "CLIENT" : "ADMIN";
+    try {
+      await updateRole({ id: member.id, role: newRole });
+      refetch();
+    } catch (err) {
+      console.error("Error updating role:", err);
+      alert("Failed to update role. Only Admins can modify access.");
     }
   };
 
@@ -110,7 +122,9 @@ export default function TeamPage() {
                       </span>
                     </td>
                     <td className="py-4 text-right">
-                      <button className="text-xs font-semibold border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 text-gray-500 hover:text-gray-800 transition-all">
+                      <button 
+                        onClick={() => handleEditRbac(member)}
+                        className="text-xs font-semibold border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 text-gray-500 hover:text-gray-800 transition-all">
                         Edit RBAC
                       </button>
                     </td>
@@ -154,10 +168,8 @@ export default function TeamPage() {
                   onChange={(e) => setInviteRole(e.target.value)}
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:bg-white focus:border-emerald-500 transition-all font-semibold text-gray-600"
                 >
-                  <option>Agency Manager</option>
-                  <option>Campaign Specialist</option>
-                  <option>Analyst</option>
-                  <option>Viewer</option>
+                  <option value="Admin">Admin</option>
+                  <option value="Client">Agency Owner</option>
                 </select>
               </div>
 

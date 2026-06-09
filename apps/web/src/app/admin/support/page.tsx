@@ -16,11 +16,7 @@ export default function AdminSupportMissionControlPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<SupportCustomer | null>(null);
 
-  const [customers, setCustomers] = useState<SupportCustomer[]>([
-    { id: "cust_1", name: "Arjun Mehta", email: "arjun@Revenuepilot.com", org: "Arjun Mehta Agency", plan: "Revenue", campaignsCount: 24, integrationsCount: 4 },
-    { id: "cust_2", name: "Sonia Roy", email: "sonia@Revenuepilot.com", org: "FitLife Gyms", plan: "Standard", campaignsCount: 5, integrationsCount: 2 },
-    { id: "cust_3", name: "Karan Singh", email: "karan@Revenuepilot.com", org: "UrbanStays Hotel", plan: "Premium", campaignsCount: 12, integrationsCount: 3 }
-  ]);
+  const [customers, setCustomers] = useState<SupportCustomer[]>([]);
 
   const handleImpersonate = (tenantName: string, userName: string) => {
     // Audit impersonation logs
@@ -80,7 +76,9 @@ export default function AdminSupportMissionControlPage() {
           </h3>
 
           <div className="space-y-2">
-            {filteredCustomers.map((c) => (
+            {filteredCustomers.length === 0 ? (
+              <p className="text-xs text-zinc-500 text-center py-8 font-bold">No support customers found.</p>
+            ) : filteredCustomers.map((c) => (
               <div 
                 key={c.id}
                 onClick={() => setSelectedUser(c)}

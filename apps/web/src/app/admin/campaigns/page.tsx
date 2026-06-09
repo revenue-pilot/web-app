@@ -16,12 +16,27 @@ interface GlobalAlert {
 }
 
 export default function AdminCampaignObservatoryPage() {
-  const [alerts, setAlerts] = useState<GlobalAlert[]>([
-    { id: "al_1", client: "EcoMart India", campaign: "PMax Electronics", platform: "Google Ads", type: "Budget Exhausted", severity: "Critical", date: "2 mins ago" },
-    { id: "al_2", client: "FitLife Gyms", campaign: "Summer Retargeting", platform: "Meta Ads", type: "Disapproved Ads", severity: "Critical", date: "1 hr ago" },
-    { id: "al_3", client: "UrbanStays Hotel", campaign: "Hotel Booking Lead Gen", platform: "Google Ads", type: "High CPC Detected", severity: "Warning", date: "3 hrs ago" },
-    { id: "al_4", client: "Apex Logistics", campaign: "Leads Awareness Campaign", platform: "Meta Ads", type: "Conversion Drop (-30%)", severity: "Warning", date: "1 day ago" }
-  ]);
+  const [alerts, setAlerts] = useState<GlobalAlert[]>([]);
+  const [stats, setStats] = useState({ total: 0, active: 0, paused: 0 });
+
+  React.useEffect(() => {
+    async function fetchCampaigns() {
+      try {
+        const token = localStorage.getItem("token") || localStorage.getItem("auth_token");
+        const res = await fetch("/api/v1/admin/campaigns", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStats(data);
+          setAlerts(data.alerts || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch campaigns", err);
+      }
+    }
+    fetchCampaigns();
+  }, []);
 
   const handleDismissAlert = (id: string) => {
     setAlerts(prev => prev.filter(a => a.id !== id));
@@ -43,23 +58,23 @@ export default function AdminCampaignObservatoryPage() {
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl">
           <span className="text-[9px] font-bold text-zinc-500 uppercase block">Active Campaigns</span>
-          <span className="text-lg font-bold text-white block mt-1">12,490</span>
+          <span className="text-lg font-bold text-white block mt-1">{stats.active.toLocaleString()}</span>
           <span className="text-[8px] text-zinc-400 font-semibold block mt-0.5">Google + Meta pools</span>
         </div>
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl">
           <span className="text-[9px] font-bold text-zinc-500 uppercase block">Paused Campaigns</span>
-          <span className="text-lg font-bold text-white block mt-1">1,402</span>
+          <span className="text-lg font-bold text-white block mt-1">{stats.paused.toLocaleString()}</span>
           <span className="text-[8px] text-zinc-400 font-semibold block mt-0.5">Under review / paused</span>
         </div>
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl">
-          <span className="text-[9px] font-bold text-zinc-500 uppercase block">Platform Failed Ads</span>
-          <span className="text-lg font-bold text-red-400 block mt-1">200</span>
-          <span className="text-[8px] text-red-400/80 font-bold block mt-0.5">Policy violations flagged</span>
+          <span className="text-[9px] font-bold text-zinc-500 uppercase block">Total Campaigns Tracked</span>
+          <span className="text-lg font-bold text-emerald-400 block mt-1">{stats.total.toLocaleString()}</span>
+          <span className="text-[8px] text-zinc-400 font-semibold block mt-0.5">Historical & Active</span>
         </div>
         <div className="bg-[#0D121F] border border-[#1B2438] p-4 rounded-xl">
           <span className="text-[9px] font-bold text-zinc-500 uppercase block">Managed ROAS Average</span>
-          <span className="text-lg font-bold text-emerald-400 block mt-1">5.07x</span>
-          <span className="text-[8px] text-zinc-400 font-semibold block mt-0.5">Weighted average ROAS</span>
+          <span className="text-lg font-bold text-emerald-400 block mt-1">Pending</span>
+          <span className="text-[8px] text-zinc-400 font-semibold block mt-0.5">Awaiting revenue attribution</span>
         </div>
       </div>
 
@@ -73,9 +88,9 @@ export default function AdminCampaignObservatoryPage() {
           </h3>
 
           <div className="space-y-3">
-            <PlatformRow name="Combined Platforms" spend="₹8.4M" revenue="₹42.5M" roas="5.07x" cpc="₹12.4" ctr="2.8%" />
-            <PlatformRow name="Google Ads Network" spend="₹4.8M" revenue="₹26.4M" roas="5.5x" cpc="₹15.2" ctr="3.1%" />
-            <PlatformRow name="Meta Ads Network" spend="₹3.6M" revenue="₹16.1M" roas="4.47x" cpc="₹8.8" ctr="2.4%" />
+            <PlatformRow name="Combined Platforms" spend="Pending" revenue="Pending" roas="Pending" cpc="Pending" ctr="Pending" />
+            <PlatformRow name="Google Ads Network" spend="Pending" revenue="Pending" roas="Pending" cpc="Pending" ctr="Pending" />
+            <PlatformRow name="Meta Ads Network" spend="Pending" revenue="Pending" roas="Pending" cpc="Pending" ctr="Pending" />
           </div>
         </div>
 

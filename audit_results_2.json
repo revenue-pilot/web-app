@@ -1,0 +1,65 @@
+[
+  {
+    "phase": "PHASE 3: USER PROFILE",
+    "status": "FAIL",
+    "details": {
+      "endpoint": "GET /api/users/profile",
+      "responseStatus": 401,
+      "responseBody": {
+        "message": "Unauthorized",
+        "statusCode": 401
+      },
+      "status": "FAIL"
+    }
+  },
+  {
+    "phase": "PHASE 4: ORGANIZATION",
+    "status": "PASS",
+    "details": {
+      "endpoint": "POST /api/auth/signup (Implicit Org Creation)",
+      "dbRowsCreated": {
+        "organization": {
+          "id": "88a49512-a19b-426b-a0e5-943ed6f7f821",
+          "name": "My Workspace",
+          "domain": null,
+          "logoUrl": null,
+          "brandColor": null,
+          "industry": null,
+          "goals": [],
+          "onboardingStep": 0,
+          "isOnboarded": false,
+          "createdAt": "2026-06-09T22:20:36.549Z",
+          "updatedAt": "2026-06-09T22:20:36.549Z"
+        }
+      },
+      "status": "PASS"
+    }
+  },
+  {
+    "phase": "PHASE 5: CRM LEAD CREATION",
+    "status": "FAIL",
+    "details": {
+      "endpoint": "POST /api/crm/leads",
+      "responseStatus": 401,
+      "responseBody": {
+        "message": "Unauthorized",
+        "statusCode": 401
+      },
+      "status": "FAIL"
+    }
+  },
+  {
+    "phase": "PHASE 6: CRM DEAL CREATION",
+    "status": "FAIL",
+    "details": {
+      "endpoint": "POST /api/crm/deals",
+      "responseStatus": 404,
+      "responseBody": {
+        "message": "Cannot POST /api/crm/deals",
+        "error": "Not Found",
+        "statusCode": 404
+      },
+      "status": "FAIL"
+    }
+  }
+]

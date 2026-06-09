@@ -26,7 +26,7 @@ export default function SignupPage() {
       if (res.ok && data.access_token) {
         setSuccessMsg("Google sign-in complete. Redirecting...");
         localStorage.setItem("user_email", data.user.email);
-        localStorage.setItem("user_role", data.user.role === "ADMIN" ? "Platform Admin" : "Agency Owner");
+        localStorage.setItem("user_role", data.user.role === "ADMIN" ? "Admin" : "Agency Owner");
         setTimeout(() => {
           window.location.href = data.user.role === "ADMIN" ? "/admin" : "/dashboard";
         }, 800);

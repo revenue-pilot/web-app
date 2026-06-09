@@ -38,7 +38,7 @@ import {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { plan, changePlan, canAccess, getUsagePercentage } = useSubscription();
+  const { plan, changePlan, canAccess, getUsagePercentage, usage, limits } = useSubscription();
 
   const [userEmail, setUserEmail] = useState("arjun@Revenuepilot.com");
   const [userRole, setUserRole] = useState("Agency Owner");
@@ -198,13 +198,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="flex justify-between text-xs text-gray-500 mb-1">
                 <span>Active Plan Campaigns</span>
                 <span className="font-semibold text-gray-900 dark:text-white">
-                  3 / {plan === "starter" ? 3 : plan === "Revenue" ? 15 : "Unlimited"}
+                  {usage.campaigns} / {limits.campaigns >= 9999 ? "Unlimited" : limits.campaigns}
                 </span>
               </div>
               <div className="w-full bg-gray-200 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full ${plan === "starter" ? "bg-red-500" : "bg-emerald-500"}`}
-                  style={{ width: plan === "starter" ? "100%" : plan === "Revenue" ? "20%" : "5%" }}
+                  className={`h-full rounded-full ${getUsagePercentage("campaigns") >= 100 ? "bg-red-500" : "bg-emerald-500"}`}
+                  style={{ width: `${getUsagePercentage("campaigns")}%` }}
                 ></div>
               </div>
             </div>
@@ -305,7 +305,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             const campaignUsagePct = getUsagePercentage("campaigns");
             const workspaceUsagePct = getUsagePercentage("workspaces");
             const teamUsagePct = getUsagePercentage("team");
-            const maxUsagePct = Math.max(campaignUsagePct, workspaceUsagePct, teamUsagePct);
+            const maxUsagePct = campaignUsagePct; // Only warn globally on campaign usage, as team/workspaces are naturally at 100% (1/1) for a single user.
 
             if (maxUsagePct >= 100) {
               return (
