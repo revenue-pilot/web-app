@@ -36,6 +36,7 @@ services:
       - '3001:3001'
     environment:
       - DATABASE_URL=postgresql://revenuepilot:password@postgres:5432/revenuepilot?schema=public
+      - DIRECT_URL=postgresql://revenuepilot:password@postgres:5432/revenuepilot?schema=public
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=super-secret-key-for-dev-only
       - NODE_ENV=development
