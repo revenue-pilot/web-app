@@ -27,7 +27,12 @@ export default async function middleware(req: NextRequest) {
   if (
     hostname === 'localhost:3000' ||
     hostname === 'revenuepilot.com' ||
-    hostname === 'www.revenuepilot.com'
+    hostname === 'www.revenuepilot.com' ||
+    hostname === 'revenuepilot.in' ||
+    hostname === 'www.revenuepilot.in' ||
+    hostname.startsWith('187.127.173.247') ||
+    hostname.startsWith('0.0.0.0') ||
+    hostname.startsWith('127.0.0.1')
   ) {
     return NextResponse.next();
   }

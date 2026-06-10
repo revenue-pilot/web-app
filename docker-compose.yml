@@ -57,7 +57,8 @@ services:
     ports:
       - '3000:3000'
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:4001
+      - NEXT_PUBLIC_API_URL=https://api.revenuepilot.in
+      - BACKEND_URL=http://api:3001
       - NODE_ENV=development
 
 volumes:
