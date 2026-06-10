@@ -33,7 +33,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
     ports:
-      - '3001:3001'
+      - '4001:3001'
     environment:
       - DATABASE_URL=postgresql://revenuepilot:password@postgres:5432/revenuepilot?schema=public
       - DIRECT_URL=postgresql://revenuepilot:password@postgres:5432/revenuepilot?schema=public
@@ -57,7 +57,7 @@ services:
     ports:
       - '3000:3000'
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:3001
+      - NEXT_PUBLIC_API_URL=http://localhost:4001
       - NODE_ENV=development
     volumes:
       - .:/usr/src/app
