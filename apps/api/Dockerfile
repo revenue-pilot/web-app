@@ -27,6 +27,7 @@ WORKDIR /usr/src/app
 
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/apps/api/dist ./dist
+COPY --from=builder /usr/src/app/packages/database ./packages/database
 
 
 ENV NODE_ENV=production
