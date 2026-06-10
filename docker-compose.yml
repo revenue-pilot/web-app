@@ -46,8 +46,6 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
       - uploads_data:/usr/src/app/uploads
 
   web:
@@ -59,9 +57,6 @@ services:
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:4001
       - NODE_ENV=development
-    volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
 
 volumes:
   pgdata:
