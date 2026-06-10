@@ -19,9 +19,9 @@ WORKDIR /usr/src/app
 
 ENV NODE_ENV production
 
-COPY --from=builder /usr/src/app/apps/web/public ./public
+COPY --from=builder /usr/src/app/apps/web/public ./apps/web/public
 COPY --from=builder /usr/src/app/apps/web/.next/standalone ./
-COPY --from=builder /usr/src/app/apps/web/.next/static ./.next/static
+COPY --from=builder /usr/src/app/apps/web/.next/static ./apps/web/.next/static
 
 EXPOSE 3000
 
