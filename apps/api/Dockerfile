@@ -25,6 +25,8 @@ RUN cd apps/api && npm run build
 FROM node:18-alpine AS production
 WORKDIR /usr/src/app
 
+RUN apk add --no-cache openssl
+
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/apps/api/node_module[s] ./apps/api/node_modules
 COPY --from=builder /usr/src/app/apps/api/dist ./apps/api/dist
