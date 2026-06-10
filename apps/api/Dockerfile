@@ -27,7 +27,7 @@ WORKDIR /usr/src/app
 
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/apps/api/dist ./dist
-COPY --from=builder /usr/src/app/packages/database/node_modules/.prisma ./node_modules/.prisma
+
 
 ENV NODE_ENV=production
 EXPOSE 3001
