@@ -11,7 +11,8 @@ COPY --from=deps /usr/src/app/node_modules ./node_modules
 COPY . .
 
 # Set environment variables for build
-ENV NEXT_PUBLIC_API_URL=http://api:3001
+ENV NEXT_PUBLIC_API_URL=https://api.revenuepilot.in
+ENV BACKEND_URL=http://api:3001
 RUN cd apps/web && npm run build
 
 FROM node:18-alpine AS runner
