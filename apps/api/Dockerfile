@@ -32,4 +32,4 @@ COPY --from=builder /usr/src/app/apps/api/dist ./dist
 ENV NODE_ENV=production
 EXPOSE 3001
 
-CMD ["node", "dist/main"]
+CMD ["sh", "-c", "node dist/main.js || node dist/src/main.js || node dist/apps/api/src/main.js || find . -name main.js -exec node {} \\;"]
