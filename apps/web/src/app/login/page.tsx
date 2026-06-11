@@ -84,7 +84,7 @@ export default function LoginPage() {
       
       const data = await res.json();
       
-      if (data.success) {
+      if (res.ok && data.access_token) {
         localStorage.setItem("user_email", data.user.email);
         localStorage.setItem("user_role", data.user.role === "ADMIN" ? "Admin" : "Agency Owner");
         localStorage.removeItem("impersonate_tenant");
