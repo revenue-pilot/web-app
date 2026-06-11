@@ -36,4 +36,4 @@ COPY --from=builder /usr/src/app/packages/database ./packages/database
 ENV NODE_ENV=production
 EXPOSE 3001
 
-CMD ["sh", "-c", "cd packages/database && npx prisma migrate deploy && cd ../../ && node apps/api/dist/src/main.js"]
+CMD ["sh", "-c", "cd packages/database && npx prisma db push --accept-data-loss && cd ../../ && node apps/api/dist/src/main.js"]
