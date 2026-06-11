@@ -4,6 +4,7 @@ import { PrismaService } from './prisma/prisma.service';
 import { BillingService } from './billing/billing.service';
 import { EmailService } from './email/email.service';
 import { StorageService } from './storage/storage.service';
+import { AuthService } from './auth/auth.service';
 import { Request } from 'express';
 import * as crypto from 'crypto';
 
@@ -33,6 +34,7 @@ export class EnterpriseController {
     private billingService: BillingService,
     private emailService: EmailService,
     private storageService: StorageService,
+    private authService: AuthService,
   ) {}
 
   private getUserEmail(req: Request): string {
@@ -140,16 +142,14 @@ export class EnterpriseController {
       include: { organization: true }
     });
     if (!user) return { success: false, message: 'User profile not found.' };
-    const userPayload = {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role
-    };
+
+    const tokenResponse = await this.authService.login(user);
 
     return {
       success: true,
-      user: userPayload,
+      user: tokenResponse.user,
+      access_token: tokenResponse.access_token,
+      refresh_token: tokenResponse.refresh_token,
       message: 'Authenticated successfully via Magic Link.'
     };
   }
