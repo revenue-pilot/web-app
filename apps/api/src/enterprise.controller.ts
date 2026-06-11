@@ -49,10 +49,6 @@ export class EnterpriseController {
 
 
 
-  @Post('auth/verify-email')
-  async verifyEmail(@Body() body: { token: string }) {
-    return { success: true, message: 'Email verified successfully.' };
-  }
 
   @Post('auth/reset-password-request')
   async resetPasswordRequest(@Body() body: { email: string }) {

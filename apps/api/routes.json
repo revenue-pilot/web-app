@@ -1,0 +1,514 @@
+[
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/dashboard"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/revenue"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/users"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/campaigns"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/subscriptions"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/integrations"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/tenants"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/tenants/123"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/audit"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/ai-usage"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/incident"
+  },
+  {
+    "method": "POST",
+    "path": "/api/ai/chat"
+  },
+  {
+    "method": "POST",
+    "path": "/api/ai/generate-campaign"
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/login"
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/signup"
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/google"
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/verify-email"
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/forgot-password"
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/reset-password"
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/refresh-token"
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/logout"
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/2fa/generate"
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/2fa/enable"
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/2fa/verify"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/automation/executions/123"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/automation/executions/123/cancel"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/automation/rules"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/automation/rules"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/automation/rules/123"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/automation/rules/123"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/automation/rules/123"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/automation/rules/123/publish"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/automation/rules/123/archive"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/automation/rules/123/execute"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/automation/templates"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/automation/templates"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/automation/templates/123/export"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/automation/templates/import"
+  },
+  {
+    "method": "GET",
+    "path": "/api/campaigns"
+  },
+  {
+    "method": "GET",
+    "path": "/api/crm/dashboard/metrics"
+  },
+  {
+    "method": "GET",
+    "path": "/api/crm/leads"
+  },
+  {
+    "method": "GET",
+    "path": "/api/crm/leads/123"
+  },
+  {
+    "method": "POST",
+    "path": "/api/crm/leads"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/crm/leads/123"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/crm/leads/123"
+  },
+  {
+    "method": "GET",
+    "path": "/api/crm/pipelines"
+  },
+  {
+    "method": "POST",
+    "path": "/api/crm/pipelines/deal"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/crm/pipelines/deal/123/stage"
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/verify-email"
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/reset-password-request"
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/reset-password"
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/magic-link-request"
+  },
+  {
+    "method": "POST",
+    "path": "/api/auth/magic-link-verify"
+  },
+  {
+    "method": "GET",
+    "path": "/api/workspaces"
+  },
+  {
+    "method": "POST",
+    "path": "/api/workspaces"
+  },
+  {
+    "method": "GET",
+    "path": "/api/clients"
+  },
+  {
+    "method": "POST",
+    "path": "/api/clients"
+  },
+  {
+    "method": "GET",
+    "path": "/api/analytics/pulse"
+  },
+  {
+    "method": "GET",
+    "path": "/api/analytics/pulse-matrix"
+  },
+  {
+    "method": "GET",
+    "path": "/api/billing/subscriptions"
+  },
+  {
+    "method": "POST",
+    "path": "/api/billing/checkout"
+  },
+  {
+    "method": "GET",
+    "path": "/api/billing/invoices"
+  },
+  {
+    "method": "GET",
+    "path": "/api/team"
+  },
+  {
+    "method": "POST",
+    "path": "/api/team/invite"
+  },
+  {
+    "method": "GET",
+    "path": "/api/creatives"
+  },
+  {
+    "method": "POST",
+    "path": "/api/creatives"
+  },
+  {
+    "method": "POST",
+    "path": "/api/creatives/generate-ratios"
+  },
+  {
+    "method": "POST",
+    "path": "/api/campaigns/deploy"
+  },
+  {
+    "method": "GET",
+    "path": "/api/notifications"
+  },
+  {
+    "method": "GET",
+    "path": "/api/activity-logs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/marketplace/apps"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/platform-metrics"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/tenants"
+  },
+  {
+    "method": "GET",
+    "path": "/api/user/profile"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/user/profile"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/team/123/role"
+  },
+  {
+    "method": "POST",
+    "path": "/api/user/profile/avatar"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/user/profile/avatar"
+  },
+  {
+    "method": "POST",
+    "path": "/api/user/profile/password"
+  },
+  {
+    "method": "POST",
+    "path": "/api/user/profile/2fa/setup"
+  },
+  {
+    "method": "POST",
+    "path": "/api/user/profile/2fa/verify"
+  },
+  {
+    "method": "POST",
+    "path": "/api/user/profile/2fa/disable"
+  },
+  {
+    "method": "POST",
+    "path": "/api/user/login-history/terminate"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/user/preferences"
+  },
+  {
+    "method": "GET",
+    "path": "/api/user/api-keys"
+  },
+  {
+    "method": "POST",
+    "path": "/api/user/api-keys"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/user/api-keys/123"
+  },
+  {
+    "method": "GET",
+    "path": "/api/user/export-data"
+  },
+  {
+    "method": "POST",
+    "path": "/api/user/deactivate"
+  },
+  {
+    "method": "POST",
+    "path": "/api/user/delete"
+  },
+  {
+    "method": "POST",
+    "path": "/api/reports/generate"
+  },
+  {
+    "method": "GET",
+    "path": "/api/reports/download/123"
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/impersonate/start"
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/impersonate/stop"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/health"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/integrations/google-ads/auth"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/integrations/google-ads/callback"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/integrations/meta-ads/auth"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/integrations/meta-ads/callback"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/marketplace/apps"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/marketplace/installations"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/marketplace/apps/123/install"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/marketplace/apps/123/uninstall"
+  },
+  {
+    "method": "GET",
+    "path": "/api/onboarding"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/onboarding/step"
+  },
+  {
+    "method": "POST",
+    "path": "/api/onboarding/checkout"
+  },
+  {
+    "method": "POST",
+    "path": "/api/organizations"
+  },
+  {
+    "method": "GET",
+    "path": "/api/organizations/me"
+  },
+  {
+    "method": "GET",
+    "path": "/api/organizations/team"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/organizations/team/123/role"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports/dashboards/executive"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports/dashboards/agency"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports/dashboards/client/123"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/reports"
+  },
+  {
+    "method": "GET",
+    "path": "/api/security/login-history"
+  },
+  {
+    "method": "GET",
+    "path": "/api/security/sessions"
+  },
+  {
+    "method": "POST",
+    "path": "/api/security/sessions/revoke"
+  },
+  {
+    "method": "GET",
+    "path": "/api/security/audit-logs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/tracking/event"
+  },
+  {
+    "method": "GET",
+    "path": "/api/users/profile"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/users/profile"
+  },
+  {
+    "method": "POST",
+    "path": "/api/users/2fa/generate"
+  },
+  {
+    "method": "POST",
+    "path": "/api/users/2fa/verify"
+  },
+  {
+    "method": "POST",
+    "path": "/api/users/2fa/disable"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/webhooks/endpoints"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/webhooks/endpoints"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/webhooks/endpoints/123"
+  }
+]
